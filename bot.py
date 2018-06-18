@@ -32,7 +32,10 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
                     level=logging.INFO)
 
 logger = logging.getLogger(__name__)
-
+handler = logging.handlers.RotatingFileHandler(
+    'foo.log', maxBytes=(1048576*5), backupCount=7
+)
+logger.addHandler(handler)
 
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
