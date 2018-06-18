@@ -65,7 +65,10 @@ def echo(bot, update):
 
     results_cos = sorted(results_cos,key=lambda x: x[1])
 
-    update.message.reply_text(results_cos[0][0]['Title'])
+    
+    for item in results_cos[:5]:
+        update.message.reply_text(item[0]['Title'], item[1])
+
         
 
     # return jsonify(results_cos[0][0]['Title'])
