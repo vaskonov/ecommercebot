@@ -19,6 +19,13 @@ bot.
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
+from utils import *
+from scipy.spatial.distance import cosine, euclidean
+import numpy as np
+import json
+import pickle
+import spacy
+from spacy.tokens import Doc
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -41,8 +48,29 @@ def help(bot, update):
 
 def echo(bot, update):
     """Echo the user message."""
-    update.message.reply_text(update.message.text)
+    text = update.message.text
+    text_emb = emb.transform([nlp(text)], debug = True)[0]
 
+    results_cos = []
+    for idx, x_emb in enumerate(data_emb):
+
+        if np.sum(x_emb) == 0:
+            print('SKIP')
+            continue
+  
+    # if y[idx] not in results_cos:
+      # results_cos[y[idx]] = []
+        
+        results_cos.append([data_or[idx], cosine(text_emb, x_emb)])
+
+    results_cos = sorted(results_cos,key=lambda x: x[1])
+
+    update.message.reply_text(results_cos[0][0]['Title'])
+        
+
+    # return jsonify(results_cos[0][0]['Title'])
+    # update.message.reply_text(update.message.text)
+    # update.message.reply_text(update.message.text)
 
 def error(bot, update, error):
     """Log Errors caused by Updates."""
@@ -77,4 +105,23 @@ def main():
 
 
 if __name__ == '__main__':
+    nlp = spacy.load('en_core_web_md', parser=False)
+    data_or = load_data("./Amazon-E-commerce-Data-set/Data-sets/amazondata_Home_32865 668.txt")
+    print("data loaded")
+
+    with open("processed.pickle", "rb") as handle:
+        doc_bytes, vocab_bytes = pickle.load(handle)
+        print('pickle was loaded')
+
+    nlp.vocab.from_bytes(vocab_bytes)
+    docs = [Doc(nlp.vocab).from_bytes(b) for b in doc_bytes]
+    print(len(docs))
+
+    # docs_text = [doc.text for doc in docs]
+
+    emb = MeanEmbeddingVectorizerSpacy()
+    emb.fit(docs)
+    data_emb = emb.transform(docs)
+    print('tfidfed')
+
     main()
