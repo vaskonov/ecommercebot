@@ -38,12 +38,12 @@ logger = logging.getLogger(__name__)
 # update. Error handlers also receive the raised TelegramError object in error.
 def start(bot, update):
     """Send a message when the command /start is issued."""
-    update.message.reply_text('Hi!')
+    update.message.reply_text('Please type the product query')
 
 
 def help(bot, update):
     """Send a message when the command /help is issued."""
-    update.message.reply_text('Help!')
+    update.message.reply_text('Please type the product query')
 
 
 def echo(bot, update):
@@ -58,18 +58,13 @@ def echo(bot, update):
             print('SKIP')
             continue
   
-    # if y[idx] not in results_cos:
-      # results_cos[y[idx]] = []
-        
         results_cos.append([data_or[idx], cosine(text_emb, x_emb)])
 
     results_cos = sorted(results_cos,key=lambda x: x[1])
 
     
     for item in results_cos[:5]:
-        update.message.reply_text(item[0]['Title'], item[1])
-
-        
+        update.message.reply_text(item[0]['Title']+ '-' + str(item[1]))
 
     # return jsonify(results_cos[0][0]['Title'])
     # update.message.reply_text(update.message.text)
