@@ -10,6 +10,7 @@ import json
 import pickle
 import spacy
 from spacy.tokens import Doc
+import math
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -32,31 +33,37 @@ def echo(bot, update):
     text_mean_emb = emb_mean.transform([nlp(text)])[0]
     text_tfidf_emb = emb_tfidf.transform([nlp(text)])[0]
 
-    results_cos = []
-    for idx, x_emb in enumerate(data_mean):
+    results_mean = [cosine(text_mean_emb, emb) if np.sum(emb)!=0 else math.inf for emb in data_mean]
+    results_tfidf = [cosine(text_tfidf_emb, emb) if np.sum(emb)!=0 else math.inf for emb in data_tfidf]
 
-        mean_emb = data_mean[idx]
-        tfidf_emb = data_tfidf[idx]
+
+    # for idx, x_emb in enumerate(data_mean):
+
+    #     mean_emb = data_mean[idx]
+    #     tfidf_emb = data_tfidf[idx]
         
-        if np.sum(mean_emb) == 0:
-            print('SKIP')
-            continue
+    #     if np.sum(mean_emb) == 0:
+    #         print('SKIP')
+    #         continue
 
-        if np.sum(tfidf_emb) == 0:
-            print('SKIP')
-            continue
+    #     if np.sum(tfidf_emb) == 0:
+    #         print('SKIP')
+    #         continue
 
-        scores = {}
-        scores['mean_cosine'] = cosine(text_mean_emb, mean_emb)
-        scores['tfidf_cosine'] = cosine(text_tfidf_emb, tfidf_emb)
+    #     scores = {}
+    #     scores['mean_cosine'] = cosine(text_mean_emb, mean_emb)
+    #     scores['tfidf_cosine'] = cosine(text_tfidf_emb, tfidf_emb)
         
-        results_cos.append([docs[idx], np.sum(list(scores.values())), scores])
+    # results_cos.append([docs[idx], np.sum(list(scores.values())), scores])
 
-    results_cos = sorted(results_cos,key=lambda x: x[1])
+    results = np.mean([results_mean,results_tfidf], axis=0)
+    # results_cos = sorted(results_cos,key=lambda x: x[1])
+    results_args = np.argsort(results)
+
     
-    for item in results_cos[:5]:
-        logger.warning('Result "%s" with scores "%s"', item[0]['Title'], str(item[1]))
-        update.message.reply_text(item[0]['Title']+ '-' + str(item[2]))
+    for idx in results_args[:5]:
+        logger.warning('Result "%s" with scores "%s"', str(docs[idx].text), str(results[idx]))
+        update.message.reply_text(str(docs[idx].text))
 
 def error(bot, update, error):
     logger.warning('Update "%s" caused error "%s"', update, error)
