@@ -29,7 +29,8 @@ def echo(bot, update):
     text = update.message.text
     logger.warning('Incoming query "%s"', text)
 
-    text_emb = emb.transform([nlp(text)], debug = True)[0]
+    text_mean_emb = emb_mean.transform([nlp(text)])[0]
+    text_tfidf_emb = emb_tfidf.transform([nlp(text)])[0]
 
     results_cos = []
     for idx, x_emb in enumerate(data_mean):
@@ -46,15 +47,15 @@ def echo(bot, update):
             continue
 
         scores = {}
-        scores['mean_cosine'] = cosine(text_emb, mean_emb)
-        scores['tfidf_cosine'] = cosine(text_emb, tfidf_emb)
+        scores['mean_cosine'] = cosine(text_mean_emb, mean_emb)
+        scores['tfidf_cosine'] = cosine(text_tfidf_emb, tfidf_emb)
         
         results_cos.append([docs[idx], np.sum(list(scores.values())), scores])
 
     results_cos = sorted(results_cos,key=lambda x: x[1])
     
     for item in results_cos[:5]:
-        logger.warning('Result "%s" with scores "%s"', item[0]['Title'], str(item[2]))
+        logger.warning('Result "%s" with scores "%s"', item[0]['Title'], str(item[1]))
         update.message.reply_text(item[0]['Title']+ '-' + str(item[2]))
 
 def error(bot, update, error):
@@ -83,7 +84,7 @@ if __name__ == '__main__':
     # nlp = spacy.load('en_core_web_md', parser=False)
     nlp = spacy.load('en_vectors_web_lg', parser=False)
 
-    with open("processed.pickle", "rb") as handle:
+    with open("processed.pickle.big", "rb") as handle:
         doc_bytes, vocab_bytes = pickle.load(handle)
         print('pickle was loaded')
 
