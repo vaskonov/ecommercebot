@@ -1,22 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Simple Bot to reply to Telegram messages.
-
-This program is dedicated to the public domain under the CC0 license.
-
-This Bot uses the Updater class to handle the bot.
-
-First, a few handler functions are defined. Then, those functions are passed to
-the Dispatcher and registered at their respective places.
-Then, the bot is started and runs until we press Ctrl-C on the command line.
-
-Usage:
-Basic Echobot example, repeats messages.
-Press Ctrl-C on the command line or send a signal to the process to stop the
-bot.
-"""
-
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
 from utils import *
@@ -27,90 +11,77 @@ import pickle
 import spacy
 from spacy.tokens import Doc
 
-# Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 
 logger = logging.getLogger(__name__)
-handler = logging.handlers.RotatingFileHandler(
-    'foo.log', maxBytes=(1048576*5), backupCount=7
-)
-logger.addHandler(handler)
+# handler = logging.handlers.RotatingFileHandler('foo.log', maxBytes=(1048576*5), backupCount=7)
+# logger.addHandler(handler)
 
-# Define a few command handlers. These usually take the two arguments bot and
-# update. Error handlers also receive the raised TelegramError object in error.
 def start(bot, update):
-    """Send a message when the command /start is issued."""
     update.message.reply_text('Please type the product query')
 
 def help(bot, update):
-    """Send a message when the command /help is issued."""
     update.message.reply_text('Please type the product query')
 
 
 def echo(bot, update):
-    """Echo the user message."""
     text = update.message.text
     logger.warning('Incoming query "%s"', text)
 
     text_emb = emb.transform([nlp(text)], debug = True)[0]
 
     results_cos = []
-    for idx, x_emb in enumerate(data_emb):
+    for idx, x_emb in enumerate(data_mean):
 
-        if np.sum(x_emb) == 0:
+        mean_emb = data_mean[idx]
+        tfidf_emb = data_tfidf[idx]
+        
+        if np.sum(mean_emb) == 0:
             print('SKIP')
             continue
 
- 	score = cosine(text_emb, x_emb)+euclidean(text_emb, x_emb)
-        results_cos.append([data_or[idx], score])
+        if np.sum(tfidf_emb) == 0:
+            print('SKIP')
+            continue
+
+        scores = {}
+        scores['mean_cosine'] = cosine(text_emb, mean_emb)
+        scores['tfidf_cosine'] = cosine(text_emb, tfidf_emb)
+        
+        results_cos.append([docs[idx], np.sum(list(scores.values())), scores])
 
     results_cos = sorted(results_cos,key=lambda x: x[1])
     
     for item in results_cos[:5]:
-        logger.warning('Result "%s" with score "%s"', item[0]['Title'], str(item[1]))
-        update.message.reply_text(item[0]['Title']+ '-' + str(item[1]))
-
-    # return jsonify(results_cos[0][0]['Title'])
-    # update.message.reply_text(update.message.text)
-    # update.message.reply_text(update.message.text)
+        logger.warning('Result "%s" with scores "%s"', item[0]['Title'], str(item[2]))
+        update.message.reply_text(item[0]['Title']+ '-' + str(item[2]))
 
 def error(bot, update, error):
-    """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, error)
 
 
 def main():
-    """Start the bot."""
-    # Create the EventHandler and pass it your bot's token.
     updater = Updater("619576158:AAG5mkS442XJ_RFhNEZhSC-m-AgovYUawhU")
 
-    # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
-    # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help))
 
-    # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.text, echo))
 
-    # log all errors
     dp.add_error_handler(error)
 
-    # Start the Bot
     updater.start_polling()
 
-    # Run the bot until you press Ctrl-C or the process receives SIGINT,
-    # SIGTERM or SIGABRT. This should be used most of the time, since
-    # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
 
 
 if __name__ == '__main__':
-    nlp = spacy.load('en_core_web_md', parser=False)
-    data_or = load_data("./Amazon-E-commerce-Data-set/Data-sets/amazondata_Home_32865 668.txt")
-    print("data loaded")
+    
+    # nlp = spacy.load('en_core_web_md', parser=False)
+    nlp = spacy.load('en_vectors_web_lg', parser=False)
 
     with open("processed.pickle", "rb") as handle:
         doc_bytes, vocab_bytes = pickle.load(handle)
@@ -122,9 +93,14 @@ if __name__ == '__main__':
 
     # docs_text = [doc.text for doc in docs]
 
-    emb = MeanEmbeddingVectorizerSpacy()
-    emb.fit(docs)
-    data_emb = emb.transform(docs)
+    emb_mean = MeanEmbeddingVectorizerSpacy()
+    emb_mean.fit(docs)
+    data_mean = emb_mean.transform(docs)
+    print('meaned')
+
+    emb_tfidf = TfidfEmbeddingVectorizerSpacy()
+    emb_tfidf.fit(docs)
+    data_tfidf = emb_tfidf.transform(docs)    
     print('tfidfed')
 
     main()
