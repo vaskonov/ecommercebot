@@ -1,7 +1,8 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
-from logging.handlers import RotatingFileHandler
-from flask import jsonify
-from flask import Flask, render_template, request
 from utils import *
 from scipy.spatial.distance import cosine, euclidean
 import numpy as np
@@ -10,108 +11,96 @@ import pickle
 import spacy
 from spacy.tokens import Doc
 
-#nlp = spacy.load('en', parser=False)
-#nlp = spacy.load('en_vectors_web_lg', parser=False)
-nlp = spacy.load('en_core_web_md', parser=False)
-#nlp.vocab.vectors.from_disk('./glove')
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
 
-# nlp.vocab.load_vectors('glove.6B.300d.txt')
-# nlp.vocab.load_vectors_from_bin_loc("./100_bow10.bin")
+logger = logging.getLogger(__name__)
+# handler = logging.handlers.RotatingFileHandler('foo.log', maxBytes=(1048576*5), backupCount=7)
+# logger.addHandler(handler)
 
-app = Flask(__name__)
-app.logger.setLevel(logging.DEBUG)
+def start(bot, update):
+    update.message.reply_text('Please type the product query')
 
-@app.route('/classify', methods=["POST"])
-def classify():
-  js = request.get_json(force=True)
-  app.logger.info('Request: %s' % json.dumps(js, indent=4))
+def help(bot, update):
+    update.message.reply_text('Please type the product query')
 
-  response = {}
-  text_or = js['text']
-  # text = preprocess(text_or)
-  text = text_or
 
-  print('text:', text)
-  text_emb = emb.transform([nlp(text)], debug = True)[0]
+def echo(bot, update):
+    text = update.message.text
+    logger.warning('Incoming query "%s"', text)
 
-# scores = [np.dot(text_emb, x_emb) for x_emb in X_emb]
-# predicted_idx = np.argmax(scores)
+    text_emb = emb.transform([nlp(text)], debug = True)[0]
 
-  # y_predicted = []
-  # y_score = []
-  
-  results_cos = []
-  for idx, x_emb in enumerate(data_emb):
+    results_cos = []
+    for idx, x_emb in enumerate(data_mean):
 
-    if np.sum(x_emb) == 0:
-      print('SKIP')
-      continue
-  
-    # if y[idx] not in results_cos:
-      # results_cos[y[idx]] = []
+        mean_emb = data_mean[idx]
+        tfidf_emb = data_tfidf[idx]
+        
+        if np.sum(mean_emb) == 0:
+            print('SKIP')
+            continue
+
+        if np.sum(tfidf_emb) == 0:
+            print('SKIP')
+            continue
+
+        scores = {}
+        scores['mean_cosine'] = cosine(text_emb, mean_emb)
+        scores['tfidf_cosine'] = cosine(text_emb, tfidf_emb)
+        
+        results_cos.append([docs[idx], np.sum(list(scores.values())), scores])
+
+    results_cos = sorted(results_cos,key=lambda x: x[1])
     
-    results_cos.append([data_or[idx], cosine(text_emb, x_emb)])
-   
-  results_cos = sorted(results_cos,key=lambda x: x[1])
-  
-  # for key, value in results_cos.iteritems():
-  #   results_min_cos[key] = np.nanmin(value) 
+    for item in results_cos[:5]:
+        logger.warning('Result "%s" with scores "%s"', item[0]['Title'], str(item[2]))
+        update.message.reply_text(item[0]['Title']+ '-' + str(item[2]))
 
-  # results_l = [(key, value) for key, value in results_min_cos.iteritems()]
-  # results_l = sorted(results_l,key=lambda x: x[1])
+def error(bot, update, error):
+    logger.warning('Update "%s" caused error "%s"', update, error)
+
+
+def main():
+    updater = Updater("619576158:AAG5mkS442XJ_RFhNEZhSC-m-AgovYUawhU")
+
+    dp = updater.dispatcher
+
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("help", help))
+
+    dp.add_handler(MessageHandler(Filters.text, echo))
+
+    dp.add_error_handler(error)
+
+    updater.start_polling()
+
+    updater.idle()
+
+
+if __name__ == '__main__':
     
-  # score = results_l[0][1]
-  # label = results_l[0][0]
-  # syn = dataset[label][0]
+    # nlp = spacy.load('en_core_web_md', parser=False)
+    nlp = spacy.load('en_vectors_web_lg', parser=False)
 
-  # if score > 0.19:
-  #   syn = 'Out of domain'
-  #   response['closest'] = label
-  #   label = '-1'
-  # else:
-  #   if label == '26':
-  #     c_scores = []
-  #     for c_idx, comp in enumerate(work_with):
-  #       c_scores.append(bleu_string_distance(comp, text))
-  #     label += '_'+str(np.argmax(c_scores))
-  #     syn +=' '+ work_with[np.argmax(c_scores)]
-  
-  # response['text'] = text_or
-  # response['class'] = label
-  # response['score'] = 1.0-score
-  # response['paraphrase'] = syn
-  
-  # app.logger.info('Response: %s' % json.dumps(response, indent=4))
+    with open("processed.pickle", "rb") as handle:
+        doc_bytes, vocab_bytes = pickle.load(handle)
+        print('pickle was loaded')
 
-  return jsonify(results_cos[:5])
+    nlp.vocab.from_bytes(vocab_bytes)
+    docs = [Doc(nlp.vocab).from_bytes(b) for b in doc_bytes]
+    print(len(docs))
 
-@app.route('/test')
-def test():
-  return "server is up"
+    # docs_text = [doc.text for doc in docs]
 
-if __name__=='__main__':
+    emb_mean = MeanEmbeddingVectorizerSpacy()
+    emb_mean.fit(docs)
+    data_mean = emb_mean.transform(docs)
+    print('meaned')
 
-  data_or = load_data("./Amazon-E-commerce-Data-set/Data-sets/amazondata_Home_32865 668.txt")
-  print("data loaded")
+    emb_tfidf = TfidfEmbeddingVectorizerSpacy()
+    emb_tfidf.fit(docs)
+    data_tfidf = emb_tfidf.transform(docs)    
+    print('tfidfed')
 
-  with open("processed.pickle", "rb") as handle:
-    doc_bytes, vocab_bytes = pickle.load(handle)
-    print('pickle was loaded')
-
-  nlp.vocab.from_bytes(vocab_bytes)
-  docs = [Doc(nlp.vocab).from_bytes(b) for b in doc_bytes]
-  print(len(docs))
-
-  # docs_text = [doc.text for doc in docs]
-
-  emb = MeanEmbeddingVectorizerSpacy()
-  # emb = TfidfEmbeddingVectorizer()
-
-  emb.fit(docs)
-  data_emb = emb.transform(docs)
-  print('tfidfed')
-
-  handler = RotatingFileHandler('./foo.log', maxBytes=100000, backupCount=1)
-  handler.setLevel(logging.INFO)
-  app.logger.addHandler(handler)
-  app.run(host='0.0.0.0', port=3030)
+    main()
