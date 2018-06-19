@@ -43,7 +43,6 @@ def start(bot, update):
     """Send a message when the command /start is issued."""
     update.message.reply_text('Please type the product query')
 
-
 def help(bot, update):
     """Send a message when the command /help is issued."""
     update.message.reply_text('Please type the product query')
@@ -52,6 +51,8 @@ def help(bot, update):
 def echo(bot, update):
     """Echo the user message."""
     text = update.message.text
+    logger.warning('Incoming query "%s"', text)
+
     text_emb = emb.transform([nlp(text)], debug = True)[0]
 
     results_cos = []
@@ -60,13 +61,14 @@ def echo(bot, update):
         if np.sum(x_emb) == 0:
             print('SKIP')
             continue
-  
-        results_cos.append([data_or[idx], cosine(text_emb, x_emb)])
+
+ 	score = cosine(text_emb, x_emb)+euclidean(text_emb, x_emb)
+        results_cos.append([data_or[idx], score])
 
     results_cos = sorted(results_cos,key=lambda x: x[1])
-
     
     for item in results_cos[:5]:
+        logger.warning('Result "%s" with score "%s"', item[0]['Title'], str(item[1]))
         update.message.reply_text(item[0]['Title']+ '-' + str(item[1]))
 
     # return jsonify(results_cos[0][0]['Title'])
