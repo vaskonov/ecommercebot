@@ -149,6 +149,37 @@ class TfidfEmbeddingVectorizer(object):
       out.append(row_mean)
     return np.array(out)
 
+class TfidfEmbeddingVectorizerSpacy(object):
+  def __init__(self):
+    self.word2weight = None
+  
+  def fit(self, X):
+    tfidf = TfidfVectorizer(analyzer=lambda x: x)
+    X_text = [x.text for x in X]
+    tfidf.fit(X_text)
+    # if a word was never seen - it must be at least as infrequent
+    # as any of the known words - so the default idf is the max of 
+    # known idf's
+    max_idf = max(tfidf.idf_)
+    self.word2weight = defaultdict(
+      lambda: max_idf,
+      [(w, tfidf.idf_[i]) for w, i in tfidf.vocabulary_.items()])
+
+    return self
+
+  def transform(self, X):
+    out = []
+    for words in X:
+      row = []
+      for w in filter_nlp(words):
+        row.append(w.vector*self.word2weight[w])
+      if len(row)!=0:
+        row_mean = np.mean(row, axis=0)
+      else:
+        row_mean = np.zeros(300)
+      out.append(row_mean)
+    return np.array(out)
+
 class MeanEmbeddingVectorizerSpacy(object):
   def fit(self, X):
     return self
