@@ -168,7 +168,7 @@ class MeanEmbeddingVectorizerSpacy(object):
       if len(row)!=0:
         row_mean = np.mean(row, axis=0)
       else:
-        row_mean = np.zeros(384)
+        row_mean = np.zeros(300)
       out.append(row_mean)
     return np.array(out)
 
