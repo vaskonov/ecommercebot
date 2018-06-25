@@ -64,7 +64,7 @@ def button(bot, update):
             for item_id in orders[username][0:-1]:
                 bot.send_message(query.message.chat_id, data[item_id]['Title'])
 
-            keyboard = [[InlineKeyboardButton("Make a payment", callback_data='payment')]]
+            keyboard = [[InlineKeyboardButton("Make payment", callback_data='payment')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             bot.send_message(query.message.chat_id, data[orders[username][-1]]['Title'], reply_markup=reply_markup)
 
@@ -83,6 +83,7 @@ def button(bot, update):
             for item in orders[username]:
                 if 'ListPrice' in data[item]:
                     item_price = float(data[item]['ListPrice'].split('$')[1])
+                    logger.warning('item_price "%s"', str(item_price))
                     prices.append(LabeledPrice(data[item]['Title'], item_price))
 
         # optionally pass need_name=True, need_phone_number=True,
