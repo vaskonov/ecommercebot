@@ -44,7 +44,7 @@ def start(bot, update):
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    update.message.reply_text('Hi '+update._effective_user.first_name+'.Please choose one of the action. Or type your request in free text.', reply_markup=reply_markup)
+    update.message.reply_text('Hi '+update._effective_user.first_name+'.Please choose one of the action. Or type your request in plain text.', reply_markup=reply_markup)
     return MAIN
 
 #def start(bot, update):
@@ -152,12 +152,15 @@ def button(bot, update):
         start = int(parts[2])
         stop = int(parts[3])
 
-        step = 1
-        if stop<start:
-            step = -1
-
         logger.warning('Next was pressed "%s"', query.data)
         results_args = search(parts[1])
+
+        step = 1
+        last_item_id = results_args[stop]
+
+        if stop<start:
+            step = -1
+            last_item_id = results_args[start]
 
         keyboard = []
         keyboard.append([])
@@ -173,13 +176,18 @@ def button(bot, update):
         
             # keyboard.append([InlineKeyboardButton(docs[idx].text, callback_data=idx)])
 
+
+        act = [[],[]]
+        act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(last_item_id)))
+        act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(last_item_id)))
+    
         if int(parts[2]) != 0:
-            keyboard[0].append(InlineKeyboardButton('Previous', callback_data='showitems:'+parts[1]+':'+str(start-4)+':'+str(start)))
+            act[1].append(InlineKeyboardButton('Previous', callback_data='showitems:'+parts[1]+':'+str(start-4)+':'+str(start)))
 
-        keyboard[0].append(InlineKeyboardButton('Next', callback_data='showitems:'+parts[1]+':'+str(stop)+':'+str(stop+4)))
+        act[1].append(InlineKeyboardButton('Next', callback_data='showitems:'+parts[1]+':'+str(stop)+':'+str(stop+4)))
 
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        bot.send_message(query.message.chat_id, 'Please choose one of the items or press Next|Previous', reply_markup=reply_markup)
+        reply_markup = InlineKeyboardMarkup(act)
+        bot.send_message(query.message.chat_id, str(docs[last_item_id].text), reply_markup=reply_markup)
         # update.message.reply_text('Please choose one of the items or press Next:', reply_markup=reply_markup)
 
       # bot.edit_message_text(text=str(data[query.data]), chat_id=query.message.chat_id, message_id=query.message.message_id)
