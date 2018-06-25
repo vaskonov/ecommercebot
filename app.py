@@ -210,8 +210,7 @@ def search(text):
  #   text_tfidf_emb = emb_tfidf.transform([nlp(text)])[0]
 
     # bot.send_chat_action(chat_id=update.message.chat_id, action=telegram.ChatAction.TYPING)
-
-    bot.send_chat_action(chat_id=update.message.chat_id, action=telegram.ChatAction.TYPING)
+    # bot.send_chat_action(chat_id=update.message.chat_id, action=telegram.ChatAction.TYPING)
 
     results_mean = [cosine(text_mean_emb, emb) if np.sum(emb)!=0 else math.inf for emb in data_mean]
 #    results_tfidf = [cosine(text_tfidf_emb, emb) if np.sum(emb)!=0 else math.inf for emb in data_tfidf]
