@@ -44,7 +44,8 @@ def start(bot, update):
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    update.message.reply_text('Hi '+update._effective_user.first_name+'.Please choose one of the action. Or type your request in plain text.', reply_markup=reply_markup)
+    # update.message.reply_text('Hi '+update._effective_user.first_name+'.Please choose one of the action. Or type your request in plain text.', reply_markup=reply_markup)
+    update.message.reply_text('Hi '+update._effective_user.first_name+'.Please choose one of the action.', reply_markup=reply_markup)
     return MAIN
 
 #def start(bot, update):
@@ -176,12 +177,11 @@ def button(bot, update):
         
             # keyboard.append([InlineKeyboardButton(docs[idx].text, callback_data=idx)])
 
-
         act = [[],[]]
         act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(last_item_id)))
         act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(last_item_id)))
     
-        if int(parts[2]) != 0:
+        if int(parts[2]) > 0:
             act[1].append(InlineKeyboardButton('Previous', callback_data='showitems:'+parts[1]+':'+str(start-4)+':'+str(start)))
 
         act[1].append(InlineKeyboardButton('Next', callback_data='showitems:'+parts[1]+':'+str(stop)+':'+str(stop+4)))
