@@ -83,7 +83,7 @@ def button(bot, update):
             for item in orders[username]:
                 if 'ListPrice' in data[item]:
                     item_price = float(data[item]['ListPrice'].split('$')[1])
-                    prices.append([LabeledPrice(data[item]['Title'], item_price)])
+                    prices.append(LabeledPrice(data[item]['Title'], item_price))
 
         # optionally pass need_name=True, need_phone_number=True,
         # need_email=True, need_shipping_address=True, is_flexible=True
