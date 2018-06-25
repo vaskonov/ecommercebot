@@ -3,11 +3,19 @@ import spacy
 from spacy.tokens import Doc
 from utils import *
 
-#nlp = spacy.load('en_vectors_web_lg', parser=False)
-nlp = spacy.load('en_core_web_md', parser=False)
+nlp = spacy.load('en_vectors_web_lg', parser=False)
+#nlp = spacy.load('en_core_web_md', parser=False)
 
-# data = load_data("./Amazon-E-commerce-Data-set/Data-sets/amazondata_Phones_1984 40.txt")
-data = load_data("./Amazon-E-commerce-Data-set/Data-sets/amazondata_Home_32865 668.txt")
+#data = load_data("./Amazon-E-commerce-Data-set/Data-sets/")
+#data = load_data("./Amazon-E-commerce-Data-set/Data-sets/amazondata_Phones_1984 40.txt")
+data = load_data("./Amazon-E-commerce-Data-set/Data-sets/amazondata_Phones_1984 40.txt")
+
+with open('phones.pickle', 'wb') as handle:
+  pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+exit(0)
+
+
 sens = [x['Title'] if 'Title' in x else '' for x in data]
 
 docs = nlp.pipe(sens)
@@ -18,7 +26,7 @@ doc_bytes = [doc.to_bytes() for doc in docs]
 # doc_bytes = [doc.to_bytes(tensor=False, user_data=False) for doc in docs]
 vocab_bytes = nlp.vocab.to_bytes()
   
-with open("processed.pickle","wb") as handle:
+with open("processed.pickle.phones.big","wb") as handle:
 	pickle.dump((doc_bytes, vocab_bytes), handle)
 
 print('dumped')
