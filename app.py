@@ -54,7 +54,7 @@ def button(bot, update):
     query = update.callback_query
     username = query.message.chat.username
 
-    logger.warning('Button pressed "%s"', query)
+    logger.warning('Button pressed "%s" - "%s"', query.data, query)
 
     if type(query.data) == int:
         update.message.reply_text(str(data[query.data]))
