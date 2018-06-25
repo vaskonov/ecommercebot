@@ -69,7 +69,7 @@ def button(bot, update):
             bot.send_message(query.message.chat_id, data[orders[username][-1]]['Title'], reply_markup=reply_markup)
 
     if 'payment' in query.data:
-        chat_id = update.message.chat_id
+        # chat_id = update.message.chat_id
         title = "Payment Example"
         description = "Payment Example using python-telegram-bot"
         payload = "Custom-Payload"
