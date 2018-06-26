@@ -15,8 +15,9 @@ import spacy
 from spacy.tokens import Doc
 import math
 
-nlp = spacy.load('en_vectors_web_lg', parser=False)
-nlp_en = spacy.load('en', parser=False)
+# nlp = spacy.load('en_vectors_web_lg', parser=False)
+nlp = spacy.load('en_core_web_lg', parser=False)
+# nlp_en = spacy.load('en', parser=False)
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -289,7 +290,7 @@ def main_process(bot, update):
         # bot.edit_message_text(text=ques[results_arg[0]], chat_id=query.message.chat_id, message_id=query.message.message_id)
     else:
         logger.warning('This is not a question from FAQ')
-        doc = filter_nlp(nlp_en(query))
+        doc = filter_nlp(nlp(query))
         nns = [w for w in doc if w.tag_ in ['NN', 'JJ']]
         sal_phrase = [w for w in doc if w.tag_ not in ['NN', 'JJ']]
         logger.warning('parsing: salient phrase: "%s" nns: "%s"', sal_phrase, nns)
