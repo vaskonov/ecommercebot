@@ -217,11 +217,17 @@ def classify_intent(query, intents):
     for intent, sens in intents.items():
         for sen in sens:
             sen_nlped = emb_mean.transform([nlp(sen)])[0]
-        
+
             if np.sum(sen_nlped)!=0:
                 intents_scores.append((intent, cosine(query_nlped, sen_nlped)))
+                score = cosine(query_nlped, sen_nlped)
             else:
                 intents_scores.append((intent, math.inf))
+                score = math.inf
+        
+            print(query, sen, score)
+   
+            intents_scores.append((intent, score))
 
     return [score for score in intents_scores if score[1]>0]
 
