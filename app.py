@@ -254,7 +254,7 @@ def faq_process(bot, update):
 
 def main_process(bot, update):
     query = update.message.text
-    logger.warning('MAIN process "%s"', text)
+    logger.warning('MAIN process "%s"', query)
 
     intents = {
         'catalog': ['I am looking for', 'I want to buy', 'I need']
