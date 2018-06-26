@@ -209,6 +209,21 @@ def button(bot, update):
 def help(bot, update):
     update.message.reply_text('Please type the product query')
 
+def classify_intent(query, intents):
+
+    query_nlped = emb_mean.transform([nlp(query)])[0]
+    intents_scores = []
+    for intent, sens in intents.items():
+        for sen in sens:
+            sen_nlped = emb_mean.transform([nlp(sen)])[0]
+        
+            if np.sum(sen_nlped)!=0:
+                intents_scores.append((intent, cosine(query_nlped, sen_nlped)))
+            else:
+                intents_scores.append((intent, math.inf))
+
+    return [score for score in intents_scores if score[1]>0]
+
 def classify(query, items):
     items_nlped = [emb_mean.transform([nlp(text)])[0] for text in items]
     query_nlped = emb_mean.transform([nlp(query)])[0]
@@ -277,12 +292,15 @@ def main_process(bot, update):
         doc = filter_nlp(nlp_en(query))
         nns = [w for w in doc if w.tag_ in ['NN', 'JJ']]
         sal_phrase = [w for w in doc if w.tag_ not in ['NN', 'JJ']]
-
-        for w in doc:
-            print(w)
-            print(w.tag_)
-
         logger.warning('parsing: salient phrase: "%s" nns: "%s"', sal_phrase, nns)
+
+        scores = sorted(classify_intent(query, intents), key=lambda x: x[1])
+        if scores[0][1] < 0.2:
+            if scores[0][0] == 'catalog':
+                update.message.text = nns
+                catalogue_process(bot, update)
+        else:
+            update.message.reply_text('Please rephrase your request')
 
 def catalogue_process(bot, update):
     text = update.message.text
