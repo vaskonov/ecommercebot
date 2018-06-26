@@ -16,6 +16,7 @@ from spacy.tokens import Doc
 import math
 
 nlp = spacy.load('en_vectors_web_lg', parser=False)
+nlp_en = spacy.load('en', parser=False)
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -45,7 +46,7 @@ def start(bot, update):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     # update.message.reply_text('Hi '+update._effective_user.first_name+'.Please choose one of the action. Or type your request in plain text.', reply_markup=reply_markup)
-    update.message.reply_text('Hi '+update._effective_user.first_name+'.Please choose one of the action.', reply_markup=reply_markup)
+    update.message.reply_text('Hi '+update._effective_user.first_name+'.Please choose one of the action. Or type your request in plain text.', reply_markup=reply_markup)
     return MAIN
 
 #def start(bot, update):
@@ -252,8 +253,12 @@ def faq_process(bot, update):
 
 
 def main_process(bot, update):
-    text = update.message.text
+    query = update.message.text
     logger.warning('MAIN process "%s"', text)
+
+    intents = {
+        'catalog': ['I am looking for', 'I want to buy', 'I need']
+    }
 
     ques = list(faq_js.keys())
     ans = list(faq_js.values())
@@ -268,8 +273,11 @@ def main_process(bot, update):
         update.message.reply_text(ans[results_arg[0]])
         # bot.edit_message_text(text=ques[results_arg[0]], chat_id=query.message.chat_id, message_id=query.message.message_id)
     else:
-        update.message.reply_text('This is not a question from FAQ')
-
+        logger.warning('This is not a question from FAQ')
+        doc = filter_nlp(nlp_en(query))
+        nns = [w for w in doc if w.tag_=='NN']
+        sal_phrase = [w for w in doc if w.tag_!='NN']
+        logger.warning('parsing: salient phrase: "%s" nns: "%s"', sal_phrase, nns)
 
 def catalogue_process(bot, update):
     text = update.message.text
