@@ -219,17 +219,15 @@ def classify_intent(query, intents):
             sen_nlped = emb_mean.transform([nlp(sen)])[0]
 
             if np.sum(sen_nlped)!=0:
-                intents_scores.append((intent, cosine(query_nlped, sen_nlped)))
                 score = cosine(query_nlped, sen_nlped)
             else:
-                intents_scores.append((intent, math.inf))
                 score = math.inf
         
             print(query, sen, score)
    
             intents_scores.append((intent, score))
 
-    return [score for score in intents_scores if score[1]>0]
+    return [score for score in intents_scores if score[1]>=0]
 
 def classify(query, items):
     items_nlped = [emb_mean.transform([nlp(text)])[0] for text in items]
@@ -297,14 +295,18 @@ def main_process(bot, update):
     else:
         logger.warning('This is not a question from FAQ')
         doc = filter_nlp(nlp(query))
-        nns = [w for w in doc if w.tag_ in ['NN', 'JJ']]
-        sal_phrase = [w for w in doc if w.tag_ not in ['NN', 'JJ']]
+        for w in doc:
+          print(w, w.tag_)
+        nns = [w.text for w in doc if w.tag_ in ['NNP', 'NN', 'JJ']]
+        sal_phrase = [w.text for w in doc if w.tag_ not in ['NNP', 'NN', 'JJ']]
         logger.warning('parsing: salient phrase: "%s" nns: "%s"', sal_phrase, nns)
 
-        scores = sorted(classify_intent(query, intents), key=lambda x: x[1])
+        scores = sorted(classify_intent(" ".join(sal_phrase), intents), key=lambda x: x[1])
+        print(scores)
+
         if scores[0][1] < 0.2:
             if scores[0][0] == 'catalog':
-                update.message.text = nns
+                update.message.text = " ".join(nns)
                 catalogue_process(bot, update)
         else:
             update.message.reply_text('Please rephrase your request')
