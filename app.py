@@ -275,8 +275,13 @@ def main_process(bot, update):
     else:
         logger.warning('This is not a question from FAQ')
         doc = filter_nlp(nlp_en(query))
-        nns = [w for w in doc if w.tag_=='NN']
-        sal_phrase = [w for w in doc if w.tag_!='NN']
+        nns = [w for w in doc if w.tag_ in ['NN', 'JJ']]
+        sal_phrase = [w for w in doc if w.tag_ not in ['NN', 'JJ']]
+
+        for w in doc:
+            print(w)
+            print(w.tag_)
+
         logger.warning('parsing: salient phrase: "%s" nns: "%s"', sal_phrase, nns)
 
 def catalogue_process(bot, update):
