@@ -171,8 +171,8 @@ def button(bot, update):
         for idx in results_args[start:stop:step]:
             logger.warning('Result "%s" with scores', str(docs[idx].text))
             # update.message.reply_text(str(docs[idx].text))
-            act = []
-            act.append([InlineKeyboardButton('Show details', callback_data='details:'+str(idx))])
+            act = [[]]
+            act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(idx)))
             act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(idx)))
             reply_markup = InlineKeyboardMarkup(act)
             bot.send_message(query.message.chat_id, str(docs[idx].text), reply_markup=reply_markup)
@@ -349,11 +349,13 @@ def catalogue_process(bot, update):
 
         # keyboard.append([InlineKeyboardButton(docs[idx].text, callback_data=idx)])
 
-    keyboard = []
-    keyboard.append([InlineKeyboardButton('Next', callback_data='showitems:'+text+':'+'5:10')])
+    act = [[],[]]
+    act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(results_args[4])))
+    act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(results_args[4])))
+    act[1].append(InlineKeyboardButton('Next', callback_data='showitems:'+text+':'+'5:10'))
 
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text('Select one of the items or select Next', reply_markup=reply_markup)
+    update.message.reply_text(str(docs[results_args[4]].text), reply_markup=reply_markup)
 
 def error(bot, update, error):
     logger.warning('Update "%s" caused error "%s"', update, error)
