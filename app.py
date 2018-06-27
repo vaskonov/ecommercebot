@@ -98,7 +98,7 @@ def button(bot, update):
             reply_markup = InlineKeyboardMarkup(keyboard)
             bot.send_message(query.message.chat_id, data[orders[username][-1]]['Title'], reply_markup=reply_markup)
         else:
-            bot.send_message(chat_id, 'Your card is empty')
+            bot.send_message(query.message.chat_id, 'Your card is empty')
 
     if 'payment' in query.data:
         # chat_id = update.message.chat_id
@@ -144,7 +144,8 @@ def button(bot, update):
             keyboard.append([InlineKeyboardButton(key, callback_data='quest:'+str(i))])
 
         reply_markup = InlineKeyboardMarkup(keyboard)
-        bot.send_message(query.message.chat_id, 'Press on question to know the answer', reply_markup=reply_markup)        
+        bot.send_message(query.message.chat_id, 'Press on question to know the answer', reply_markup=reply_markup)
+        return FAQ
             
     if query.data == 'faq':
         keyboard = [[InlineKeyboardButton("Show entire FAQ", callback_data='showfaq')]]
