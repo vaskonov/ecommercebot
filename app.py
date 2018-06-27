@@ -55,7 +55,7 @@ def start(bot, update):
 
 #def start(bot, update):
 #    update.message.reply_text('Please type the product query')
-def make_payment(chat_id, username)
+def make_payment(chat_id, username):
     title = "Payment Example"
     description = "Payment Example"
     payload = "Custom-Payload"
