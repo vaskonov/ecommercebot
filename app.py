@@ -79,7 +79,7 @@ def button(bot, update):
         description = "Payment Example using python-telegram-bot"
         payload = "Custom-Payload"
         # In order to get a provider_token see https://core.telegram.org/bots/payments#getting-a-token
-        provider_token = "PROVIDER_TOKEN"
+        provider_token = "381764678:TEST:5997"
         start_parameter = "test-payment"
         currency = "USD"
         prices = []
@@ -279,7 +279,7 @@ def main_process(bot, update):
     logger.warning('MAIN process "%s"', query)
 
     intents = {
-        'catalog': ['I am looking for', 'I want to buy', 'I need']
+        'catalog': ['I am looking for', 'I want to buy', 'I need', 'I search']
     }
 
     ques = list(faq_js.keys())
