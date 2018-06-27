@@ -55,6 +55,29 @@ def start(bot, update):
 
 #def start(bot, update):
 #    update.message.reply_text('Please type the product query')
+def make_payment(chat_id, username)
+    title = "Payment Example"
+    description = "Payment Example"
+    payload = "Custom-Payload"
+    # In order to get a provider_token see https://core.telegram.org/bots/payments#getting-a-token
+    provider_token = "381764678:TEST:5997"
+    start_parameter = "test-payment"
+    currency = "RUB"
+    prices = []
+
+    if username in orders:
+        for item in orders[username]:
+            if 'ListPrice' in data[item]:
+                item_price = Decimal(data[item]['ListPrice'].split('$')[1])
+                logger.warning('item_price "%s"', str(item_price))
+                prices.append(LabeledPrice(data[item]['Title'], int(item_price*100)))
+                # prices.append(LabeledPrice(data[item]['Title'], 100))
+
+    # optionally pass need_name=True, need_phone_number=True,
+    # need_email=True, need_shipping_address=True, is_flexible=True
+    bot.sendInvoice(chat_id, title, description, payload,
+                provider_token, start_parameter, currency, prices)
+
 
 def button(bot, update):
     query = update.callback_query
@@ -76,28 +99,8 @@ def button(bot, update):
 
     if 'payment' in query.data:
         # chat_id = update.message.chat_id
-        title = "Payment Example"
-        description = "Payment Example using python-telegram-bot"
-        payload = "Custom-Payload"
-        # In order to get a provider_token see https://core.telegram.org/bots/payments#getting-a-token
-        provider_token = "381764678:TEST:5997"
-        start_parameter = "test-payment"
-        currency = "USD"
-        prices = []
-    
-        if username in orders:
-            for item in orders[username]:
-                if 'ListPrice' in data[item]:
-                    item_price = Decimal(data[item]['ListPrice'].split('$')[1])
-                    logger.warning('item_price "%s"', str(item_price))
-                    prices.append(LabeledPrice(data[item]['Title'], int(item_price*100)))
-                    # prices.append(LabeledPrice(data[item]['Title'], 100))
-
-        # optionally pass need_name=True, need_phone_number=True,
-        # need_email=True, need_shipping_address=True, is_flexible=True
-        bot.sendInvoice(query.message.chat_id, title, description, payload,
-                    provider_token, start_parameter, currency, prices)
-
+        make_payment(query.message.chat_id, username)
+        
     if 'tocard' in query.data:
         parts = query.data.split(":")
         if username not in orders:
@@ -281,7 +284,8 @@ def main_process(bot, update):
     logger.warning('MAIN process "%s"', query)
 
     intents = {
-        'catalog': ['I am looking for', 'I want to buy', 'I need', 'I search']
+        'catalog': ['I am looking for', 'I want to buy', 'I need', 'I search'],
+        'payment': ['I want to pay'], ['I need to pay for my order'], ['please receive a payment']
     }
 
     ques = list(faq_js.keys())
@@ -312,6 +316,8 @@ def main_process(bot, update):
             if scores[0][0] == 'catalog':
                 update.message.text = " ".join(nns)
                 catalogue_process(bot, update)
+            if scores[0][0] == 'payment':
+                make_payment(bot.chat.id, bot.chat.username)
         else:
             update.message.reply_text('Please rephrase your request')
 
