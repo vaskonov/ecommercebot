@@ -30,7 +30,7 @@ logger.addHandler(handler)
 emb_mean = MeanEmbeddingVectorizerSpacy()
 # emb_tfidf = TfidfEmbeddingVectorizerSpacy()
 
-CHOOSING, FAQ, ORDERS, CATALOGUE, MAIN = range(5)
+CHOOSING, FAQ, ORDERS, CATALOG, MAIN = range(5)
 orders = {}
 
 def card(bot, update, args):
@@ -97,10 +97,12 @@ def button(bot, update):
             keyboard = [[InlineKeyboardButton("Make payment", callback_data='payment')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             bot.send_message(query.message.chat_id, data[orders[username][-1]]['Title'], reply_markup=reply_markup)
+        else:
+            bot.send_message(chat_id, 'Your card is empty')
 
     if 'payment' in query.data:
         # chat_id = update.message.chat_id
-        make_payment(query.message.chat_id, username)
+        make_payment(query.message.chat_id, username, bot)
         
     if 'tocard' in query.data:
         parts = query.data.split(":")
@@ -152,7 +154,7 @@ def button(bot, update):
 
     if query.data == 'catalogue':
         bot.send_message(query.message.chat_id, 'Please type the product title')
-        return CATALOGUE
+        return CATALOG
 
         # custom_keyboard = [['FAQ']]
         # reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
@@ -324,8 +326,7 @@ def main_process(bot, update):
 
 def catalogue_process(bot, update):
     text = update.message.text
-
-    
+    print("catalogue_process")
 
     # for idx, x_emb in enumerate(data_mean):
 
@@ -385,7 +386,7 @@ def main():
         states = {
             MAIN: [CallbackQueryHandler(button), MessageHandler(Filters.text, main_process)],
             FAQ: [MessageHandler(Filters.text, faq_process),],
-            CATALOGUE: [MessageHandler(Filters.text, catalogue_process),]
+            CATALOG: [MessageHandler(Filters.text, catalogue_process),]
             # ORDERS: [MessageHandler(Filters.text, catalogue_process),]
         },
         fallbacks=[CommandHandler('start', start)],
