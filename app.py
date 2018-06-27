@@ -42,7 +42,7 @@ def start(bot, update):
     logger.warning('New start is detected "%s"', update)
 
     keyboard = [[InlineKeyboardButton("Catalog", callback_data='catalogue'),
-                 InlineKeyboardButton("Orders", callback_data='tocard'),
+                 InlineKeyboardButton("Orders", callback_data='opencard'),
                  InlineKeyboardButton("FAQ", callback_data='faq')]]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
