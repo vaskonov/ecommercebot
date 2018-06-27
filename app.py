@@ -55,7 +55,7 @@ def start(bot, update):
 
 #def start(bot, update):
 #    update.message.reply_text('Please type the product query')
-def make_payment(chat_id, username):
+def make_payment(chat_id, username, bot):
     title = "Payment Example"
     description = "Payment Example"
     payload = "Custom-Payload"
@@ -317,7 +317,7 @@ def main_process(bot, update):
                 update.message.text = " ".join(nns)
                 catalogue_process(bot, update)
             if scores[0][0] == 'payment':
-                make_payment(update.message.chat.id, update.message.chat.username)
+                make_payment(update.message.chat.id, update.message.chat.username, bot)
         else:
             update.message.reply_text('Please rephrase your request')
 
