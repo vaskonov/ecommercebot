@@ -317,7 +317,7 @@ def main_process(bot, update):
                 update.message.text = " ".join(nns)
                 catalogue_process(bot, update)
             if scores[0][0] == 'payment':
-                make_payment(bot.chat.id, bot.chat.username)
+                make_payment(update.message.chat.id, update.message.chat.username)
         else:
             update.message.reply_text('Please rephrase your request')
 
