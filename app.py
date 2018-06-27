@@ -191,7 +191,7 @@ def button(bot, update):
         act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(last_item_id)))
     
         if int(parts[2]) > 0:
-            act[1].append(InlineKeyboardButton('Previous', callback_data='showitems:'+parts[1]+':'+str(start-5)+':'+str(start)))
+            act[1].append(InlineKeyboardButton('Previous', callback_data='showitems:'+parts[1]+':'+str(start-5)+':'+str(start-1)))
 
         act[1].append(InlineKeyboardButton('Next', callback_data='showitems:'+parts[1]+':'+str(stop)+':'+str(stop+4)))
 
