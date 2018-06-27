@@ -14,6 +14,7 @@ import pickle
 import spacy
 from spacy.tokens import Doc
 import math
+from decimal import Decimal
 
 # nlp = spacy.load('en_vectors_web_lg', parser=False)
 nlp = spacy.load('en_core_web_lg', parser=False)
@@ -87,9 +88,10 @@ def button(bot, update):
         if username in orders:
             for item in orders[username]:
                 if 'ListPrice' in data[item]:
-                    item_price = float(data[item]['ListPrice'].split('$')[1])
+                    item_price = Decimal(data[item]['ListPrice'].split('$')[1])
                     logger.warning('item_price "%s"', str(item_price))
                     prices.append(LabeledPrice(data[item]['Title'], item_price))
+                    # prices.append(LabeledPrice(data[item]['Title'], 100))
 
         # optionally pass need_name=True, need_phone_number=True,
         # need_email=True, need_shipping_address=True, is_flexible=True
