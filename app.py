@@ -193,7 +193,7 @@ def button(bot, update):
         if int(parts[2]) > 0:
             act[1].append(InlineKeyboardButton('Previous', callback_data='showitems:'+parts[1]+':'+str(start-5)+':'+str(start-1)))
 
-        act[1].append(InlineKeyboardButton('Next', callback_data='showitems:'+parts[1]+':'+str(stop)+':'+str(stop+4)))
+        act[1].append(InlineKeyboardButton('Next', callback_data='showitems:'+parts[1]+':'+str(stop+1)+':'+str(stop+5)))
 
         reply_markup = InlineKeyboardMarkup(act)
         bot.send_message(query.message.chat_id, str(docs[last_item_id].text), reply_markup=reply_markup)
