@@ -90,7 +90,7 @@ def button(bot, update):
                 if 'ListPrice' in data[item]:
                     item_price = Decimal(data[item]['ListPrice'].split('$')[1])
                     logger.warning('item_price "%s"', str(item_price))
-                    prices.append(LabeledPrice(data[item]['Title'], item_price))
+                    prices.append(LabeledPrice(data[item]['Title'], int(item_price*100)))
                     # prices.append(LabeledPrice(data[item]['Title'], 100))
 
         # optionally pass need_name=True, need_phone_number=True,
