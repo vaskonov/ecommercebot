@@ -285,7 +285,7 @@ def main_process(bot, update):
 
     intents = {
         'catalog': ['I am looking for', 'I want to buy', 'I need', 'I search'],
-        'payment': ['I want to pay'], ['I need to pay for my order'], ['please receive a payment']
+        'payment': ['I want to pay', 'I need to pay for my order', 'please receive a payment']
     }
 
     ques = list(faq_js.keys())
