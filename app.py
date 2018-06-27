@@ -66,10 +66,6 @@ def make_payment(chat_id, username, bot):
     prices = []
 
     if username in orders:
-        if len(orders[username])==0:
-            bot.send_message(chat_id, 'Your card is empty')
-            return
-
         for item in orders[username]:
             if 'ListPrice' in data[item]:
                 item_price = Decimal(data[item]['ListPrice'].split('$')[1])
@@ -79,9 +75,10 @@ def make_payment(chat_id, username, bot):
 
     # optionally pass need_name=True, need_phone_number=True,
     # need_email=True, need_shipping_address=True, is_flexible=True
-    bot.sendInvoice(chat_id, title, description, payload,
+        bot.sendInvoice(chat_id, title, description, payload,
                 provider_token, start_parameter, currency, prices)
-
+    else:
+        bot.send_message(chat_id, 'Your card is empty')
 
 def button(bot, update):
     query = update.callback_query
