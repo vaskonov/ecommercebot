@@ -47,7 +47,9 @@ def start(bot, update):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     # update.message.reply_text('Hi '+update._effective_user.first_name+'.Please choose one of the action. Or type your request in plain text.', reply_markup=reply_markup)
-    update.message.reply_text('Hi '+update._effective_user.first_name+'.Please choose one of the action. Or type your request in plain text.', reply_markup=reply_markup)
+    
+    update.message.reply_text('Hi '+update._effective_user.first_name, reply_markup=telegram.ReplyKeyboardRemove())
+    update.message.reply_text('Please choose one of the action. Or type your request in plain text.', reply_markup=reply_markup)
     return MAIN
 
 #def start(bot, update):
