@@ -66,6 +66,10 @@ def make_payment(chat_id, username, bot):
     prices = []
 
     if username in orders:
+        if len(orders[username])==0:
+            bot.send_message(chat_id, 'Your card is empty')
+            return
+
         for item in orders[username]:
             if 'ListPrice' in data[item]:
                 item_price = Decimal(data[item]['ListPrice'].split('$')[1])
