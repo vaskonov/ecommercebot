@@ -167,7 +167,7 @@ def button(bot, update):
         stop = int(parts[3])
 
         logger.warning('Next was pressed "%s"', query.data)
-        results_args = search(parts[1])
+        results_args, scores = search(parts[1])
 
         step = 1
         last_item_id = results_args[stop]
@@ -257,10 +257,10 @@ def search(text):
 #    results_tfidf = [cosine(text_tfidf_emb, emb) if np.sum(emb)!=0 else math.inf for emb in data_tfidf]
         #results = np.mean([results_mean,results_tfidf], axis=0)
 
-    results = np.mean([results_mean], axis=0)
+    scores = np.mean([results_mean], axis=0)
     # results_cos = sorted(results_cos,key=lambda x: x[1])
-    results_args = np.argsort(results)
-    return results_args
+    results_args = np.argsort(scores)
+    return results_args, scores
 
 def faq_process(bot, update):
     query = update.message.text
@@ -349,10 +349,10 @@ def catalogue_process(bot, update):
     # results_cos.append([docs[idx], np.sum(list(scores.values())), scores])
 
 
-    results_args = search(text)
+    results_args, scores = search(text)
     
     for idx in results_args[:4]:
-        logger.warning('Result "%s" with scores', str(docs[idx].text))
+        logger.warning('Result "%s" with score "%s"', str(docs[idx].text), str(scores[idx]))
 
         act = []
         act.append([InlineKeyboardButton('Show details', callback_data='details:'+str(idx))])
