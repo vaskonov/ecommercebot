@@ -117,12 +117,13 @@ def button(bot, update):
     if 'details' in query.data:
         parts = query.data.split(":")
         cats = ['Title', 'Manufacturer', 'Model', 'ListPrice', 'Binding']
+        txt = ""
         for cat in cats:
             if cat in data[int(parts[1])]:
-                txt = cat + ':' + data[int(parts[1])][cat]
+                txt = cat + ':' + data[int(parts[1])][cat] + "\n"
                 if cat == 'ListPrice':
-                    txt = cat+':$'+data[int(parts[1])][cat].split('$')[1]
-                bot.send_message(query.message.chat_id, txt)
+                    txt = cat + ':$' + data[int(parts[1])][cat].split('$')[1] + "\n"
+        bot.send_message(query.message.chat_id, txt)
 
     if 'answer' in query.data:
         parts = query.data.split(":")
@@ -350,6 +351,12 @@ def catalogue_process(bot, update):
 
 
     results_args, scores = search(text)
+    prices = [data[idx]['ListPrice'].split('$')[1] for idx in results_args if scores[idx]<0.4 and 'ListPrice' in data[idx]]
+
+    price_first = prices[round(float(len(prices))/3)]
+    price_last = prices[round(float(len(prices)*2)/3)]
+
+    logger.warning('Prices of high relevance "%s"', str(prices))
     
     for idx in results_args[:4]:
         logger.warning('Result "%s" with score "%s"', str(docs[idx].text), str(scores[idx]))
@@ -366,6 +373,10 @@ def catalogue_process(bot, update):
     act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(results_args[4])))
     act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(results_args[4])))
     act[1].append(InlineKeyboardButton('Next', callback_data='showitems:'+text+':'+'5:10'))
+
+    # pr = [[]]
+    # act[0].append(InlineKeyboardButton('Below '+str(price_first)+'$', callback_data='below:'+str(results_args[4])))
+
 
     reply_markup = InlineKeyboardMarkup(act)
     update.message.reply_text(str(docs[results_args[4]].text), reply_markup=reply_markup)
