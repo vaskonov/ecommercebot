@@ -120,9 +120,9 @@ def button(bot, update):
         txt = ""
         for cat in cats:
             if cat in data[int(parts[1])]:
-                txt = cat + ':' + data[int(parts[1])][cat] + "\n"
+                txt += cat + ':' + data[int(parts[1])][cat] + "\n"
                 if cat == 'ListPrice':
-                    txt = cat + ':$' + data[int(parts[1])][cat].split('$')[1] + "\n"
+                    txt += cat + ':$' + data[int(parts[1])][cat].split('$')[1] + "\n"
         bot.send_message(query.message.chat_id, txt)
 
     if 'answer' in query.data:
@@ -351,7 +351,7 @@ def catalogue_process(bot, update):
 
 
     results_args, scores = search(text)
-    prices = [data[idx]['ListPrice'].split('$')[1] for idx in results_args if scores[idx]<0.4 and 'ListPrice' in data[idx]]
+    prices = sorted([float(data[idx]['ListPrice'].split('$')[1]) for idx in results_args if scores[idx]<0.4 and 'ListPrice' in data[idx]])
 
     price_first = prices[round(float(len(prices))/3)]
     price_last = prices[round(float(len(prices)*2)/3)]
