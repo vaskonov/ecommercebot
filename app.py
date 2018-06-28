@@ -31,7 +31,9 @@ emb_mean = MeanEmbeddingVectorizerSpacy()
 # emb_tfidf = TfidfEmbeddingVectorizerSpacy()
 
 CHOOSING, FAQ, ORDERS, CATALOG, MAIN = range(5)
+
 orders = {}
+uquery = {}
 
 def card(bot, update, args):
     update.message.reply_text('card was pressed')
@@ -100,6 +102,19 @@ def button(bot, update):
         else:
             bot.send_message(query.message.chat_id, 'Your card is empty')
 
+    if 'below' in query.data:
+        zerokeys = ['above', 'between', 'start', 'stop']
+        uquery[username] = {k: v for k,v in uquery[username].items() if k not in zerokeys}
+        uquery[username]['below'] = float(parts[1])
+
+    if 'previous' in query.data:
+        uquery[username]['start'] = start-5
+        uquery[username]['stop'] = start-1
+
+    if 'next' in query.data:
+        uquery[username]['start'] = stop+1
+        uquery[username]['stop'] = stop+5
+    
     if 'payment' in query.data:
         # chat_id = update.message.chat_id
         make_payment(query.message.chat_id, username, bot)
@@ -219,6 +234,47 @@ def button(bot, update):
    #   update.message.reply_text('Please type your question.')
       bot.edit_message_text(text="Please type your question.", chat_id=query.message.chat_id, message_id=query.message.message_id)
 
+def showitem(bot, username):
+
+    query = uquery[username]['query']
+    start = uquery[username]['start'] if 'start' in uquery[username] else 0
+    stop = uquery[username]['stop'] if 'stop' in uquery[username] else 4
+    
+    logger.warning('Next was pressed "%s"', str(uquery[username]))
+    results_args, scores = search(query)
+
+    step = 1
+    last_item_id = results_args[stop]
+
+    if stop<start:
+        step = -1
+        last_item_id = results_args[start]
+
+    keyboard = []
+    keyboard.append([])
+
+    for idx in results_args[start:stop:step]:
+        logger.warning('Result "%s" with scores', str(docs[idx].text))
+        # update.message.reply_text(str(docs[idx].text))
+        act = [[]]
+        act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(idx)))
+        act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(idx)))
+        reply_markup = InlineKeyboardMarkup(act)
+        bot.send_message(query.message.chat_id, str(docs[idx].text), reply_markup=reply_markup)
+    
+        # keyboard.append([InlineKeyboardButton(docs[idx].text, callback_data=idx)])
+
+    act = [[],[]]
+    act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(last_item_id)))
+    act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(last_item_id)))
+
+    if int(parts[2]) > 0:
+        act[1].append(InlineKeyboardButton('Previous', callback_data='previous'))
+
+    act[1].append(InlineKeyboardButton('Next', callback_data='next'))
+
+    reply_markup = InlineKeyboardMarkup(act)
+    bot.send_message(query.message.chat_id, str(docs[last_item_id].text), reply_markup=reply_markup)
 
 def help(bot, update):
     update.message.reply_text('Please type the product query')
@@ -328,60 +384,78 @@ def main_process(bot, update):
             update.message.reply_text('Please rephrase your request')
 
 def catalogue_process(bot, update):
+    username = update._effective_user.username
     text = update.message.text
-    print("catalogue_process")
 
-    # for idx, x_emb in enumerate(data_mean):
+    if username in uquery:
+        del uquery[username]
 
-    #     mean_emb = data_mean[idx]
-    #     tfidf_emb = data_tfidf[idx]
-        
-    #     if np.sum(mean_emb) == 0:
-    #         print('SKIP')
-    #         continue
+    uquery[username]['query'] = text
+    showitem(bot, username)
 
-    #     if np.sum(tfidf_emb) == 0:
-    #         print('SKIP')
-    #         continue
-
-    #     scores = {}
-    #     scores['mean_cosine'] = cosine(text_mean_emb, mean_emb)
-    #     scores['tfidf_cosine'] = cosine(text_tfidf_emb, tfidf_emb)
-        
-    # results_cos.append([docs[idx], np.sum(list(scores.values())), scores])
-
-
-    results_args, scores = search(text)
-    prices = sorted([float(data[idx]['ListPrice'].split('$')[1]) for idx in results_args if scores[idx]<0.4 and 'ListPrice' in data[idx]])
-
-    price_first = prices[round(float(len(prices))/3)]
-    price_last = prices[round(float(len(prices)*2)/3)]
-
-    logger.warning('Prices of high relevance "%s"', str(prices))
-    logger.warning('First: "%s" Last: "%s"', str(price_first), str(price_last))
+    # text = update.message.text
     
-    for idx in results_args[:4]:
-        logger.warning('Result "%s" with score "%s"', str(docs[idx].text), str(scores[idx]))
+    # uquery[username] = {}
+    # uquery[username]['query'] = text
+    # # uquery[username]['start'] = 5
+    # # uquery[username]['stop'] = 10
 
-        act = []
-        act.append([InlineKeyboardButton('Show details', callback_data='details:'+str(idx))])
-        act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(idx)))
-        reply_markup = InlineKeyboardMarkup(act)
-        update.message.reply_text(str(docs[idx].text), reply_markup=reply_markup)
+    # print("catalogue_process")
 
-        # keyboard.append([InlineKeyboardButton(docs[idx].text, callback_data=idx)])
+    # # for idx, x_emb in enumerate(data_mean):
 
-    act = [[],[]]
-    act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(results_args[4])))
-    act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(results_args[4])))
-    act[1].append(InlineKeyboardButton('Next', callback_data='showitems:'+text+':'+'5:10'))
+    # #     mean_emb = data_mean[idx]
+    # #     tfidf_emb = data_tfidf[idx]
+        
+    # #     if np.sum(mean_emb) == 0:
+    # #         print('SKIP')
+    # #         continue
+
+    # #     if np.sum(tfidf_emb) == 0:
+    # #         print('SKIP')
+    # #         continue
+
+    # #     scores = {}
+    # #     scores['mean_cosine'] = cosine(text_mean_emb, mean_emb)
+    # #     scores['tfidf_cosine'] = cosine(text_tfidf_emb, tfidf_emb)
+        
+    # # results_cos.append([docs[idx], np.sum(list(scores.values())), scores])
+
+    # # uquery
+
+    # results_args, scores = search(text)
+    # prices = sorted([float(data[idx]['ListPrice'].split('$')[1]) for idx in results_args if scores[idx]<0.4 and 'ListPrice' in data[idx]])
+
+    # price_first = prices[round(float(len(prices))/3)]
+    # price_last = prices[round(float(len(prices)*2)/3)]
+
+    # logger.warning('Prices of high relevance "%s"', str(prices))
+    # logger.warning('First: "%s" Last: "%s"', str(price_first), str(price_last))
+    
+    # for idx in results_args[:4]:
+    #     logger.warning('Result "%s" with score "%s"', str(docs[idx].text), str(scores[idx]))
+
+    #     act = []
+    #     act.append([InlineKeyboardButton('Show details', callback_data='details:'+str(idx))])
+    #     act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(idx)))
+    #     reply_markup = InlineKeyboardMarkup(act)
+    #     update.message.reply_text(str(docs[idx].text), reply_markup=reply_markup)
+
+    #     # keyboard.append([InlineKeyboardButton(docs[idx].text, callback_data=idx)])
+
+    # act = [[],[]]
+    # act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(results_args[4])))
+    # act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(results_args[4])))
+    # act[1].append(InlineKeyboardButton('Next', callback_data='showitems:'+text+':'+'5:10'))
+    # reply_markup = InlineKeyboardMarkup(act)
+    # update.message.reply_text(str(docs[results_args[4]].text), reply_markup=reply_markup)
 
     # pr = [[]]
-    # act[0].append(InlineKeyboardButton('Below '+str(price_first)+'$', callback_data='below:'+str(results_args[4])))
-
-
-    reply_markup = InlineKeyboardMarkup(act)
-    update.message.reply_text(str(docs[results_args[4]].text), reply_markup=reply_markup)
+    # pr[0].append(InlineKeyboardButton('Below '+str(price_first)+'$', callback_data='below:'+str(price_first)))
+    # pr[0].append(InlineKeyboardButton('Between '+str(price_first)+'$ and '+str(price_last)+'$', callback_data='between:'+str(price_first)+":"+str(price_last)))
+    # pr[0].append(InlineKeyboardButton('Above '+str(price_last)+'$', callback_data='above:'+str(price_last)))
+    # reply_markup = InlineKeyboardMarkup(pr)
+    # update.message.reply_text('Please select a price range', reply_markup=reply_markup)
 
 def error(bot, update, error):
     logger.warning('Update "%s" caused error "%s"', update, error)
