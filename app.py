@@ -120,9 +120,10 @@ def button(bot, update):
         txt = ""
         for cat in cats:
             if cat in data[int(parts[1])]:
-                txt += cat + ':' + data[int(parts[1])][cat] + "\n"
                 if cat == 'ListPrice':
                     txt += cat + ':$' + data[int(parts[1])][cat].split('$')[1] + "\n"
+                else:
+                    txt += cat + ':' + data[int(parts[1])][cat] + "\n"
         bot.send_message(query.message.chat_id, txt)
 
     if 'answer' in query.data:
@@ -357,6 +358,7 @@ def catalogue_process(bot, update):
     price_last = prices[round(float(len(prices)*2)/3)]
 
     logger.warning('Prices of high relevance "%s"', str(prices))
+    logger.warning('First: "%s" Last: "%s"', str(price_first), str(price_last))
     
     for idx in results_args[:4]:
         logger.warning('Result "%s" with score "%s"', str(docs[idx].text), str(scores[idx]))
