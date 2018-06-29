@@ -260,7 +260,7 @@ def showitem(bot, chat_id, username):
         act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(idx)))
         act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(idx)))
         reply_markup = InlineKeyboardMarkup(act)
-        bot.send_message(query.message.chat_id, str(docs[idx].text), reply_markup=reply_markup)
+        bot.send_message(chat_id, str(docs[idx].text), reply_markup=reply_markup)
     
         # keyboard.append([InlineKeyboardButton(docs[idx].text, callback_data=idx)])
 
