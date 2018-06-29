@@ -106,14 +106,17 @@ def button(bot, update):
         zerokeys = ['above', 'between', 'start', 'stop']
         uquery[username] = {k: v for k,v in uquery[username].items() if k not in zerokeys}
         uquery[username]['below'] = float(parts[1])
+        showitem(bot, query.message.chat_id, username)
 
     if 'previous' in query.data:
         uquery[username]['start'] = start-5
         uquery[username]['stop'] = start-1
+        showitem(bot, query.message.chat_id, username)
 
     if 'next' in query.data:
         uquery[username]['start'] = stop+1
         uquery[username]['stop'] = stop+5
+        showitem(bot, query.message.chat_id, username)
     
     if 'payment' in query.data:
         # chat_id = update.message.chat_id
@@ -178,49 +181,49 @@ def button(bot, update):
         # reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
         # bot.send_message(chat_id=query.message.chat_id, text="Type your question or press FAQ", reply_markup=reply_markup)
 
-    if 'showitems' in query.data:
-        parts = query.data.split(':')
-        start = int(parts[2])
-        stop = int(parts[3])
+    # if 'showitems' in query.data:
+    #     parts = query.data.split(':')
+    #     start = int(parts[2])
+    #     stop = int(parts[3])
 
-        logger.warning('Next was pressed "%s"', query.data)
-        results_args, scores = search(parts[1])
+    #     logger.warning('Next was pressed "%s"', query.data)
+    #     results_args, scores = search(parts[1])
 
-        step = 1
-        last_item_id = results_args[stop]
+    #     step = 1
+    #     last_item_id = results_args[stop]
 
-        if stop<start:
-            step = -1
-            last_item_id = results_args[start]
+    #     if stop<start:
+    #         step = -1
+    #         last_item_id = results_args[start]
 
-        keyboard = []
-        keyboard.append([])
+    #     keyboard = []
+    #     keyboard.append([])
     
-        for idx in results_args[start:stop:step]:
-            logger.warning('Result "%s" with scores', str(docs[idx].text))
-            # update.message.reply_text(str(docs[idx].text))
-            act = [[]]
-            act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(idx)))
-            act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(idx)))
-            reply_markup = InlineKeyboardMarkup(act)
-            bot.send_message(query.message.chat_id, str(docs[idx].text), reply_markup=reply_markup)
+    #     for idx in results_args[start:stop:step]:
+    #         logger.warning('Result "%s" with scores', str(docs[idx].text))
+    #         # update.message.reply_text(str(docs[idx].text))
+    #         act = [[]]
+    #         act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(idx)))
+    #         act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(idx)))
+    #         reply_markup = InlineKeyboardMarkup(act)
+    #         bot.send_message(query.message.chat_id, str(docs[idx].text), reply_markup=reply_markup)
         
-            # keyboard.append([InlineKeyboardButton(docs[idx].text, callback_data=idx)])
+    #         # keyboard.append([InlineKeyboardButton(docs[idx].text, callback_data=idx)])
 
-        act = [[],[]]
-        act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(last_item_id)))
-        act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(last_item_id)))
+    #     act = [[],[]]
+    #     act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(last_item_id)))
+    #     act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(last_item_id)))
     
-        if int(parts[2]) > 0:
-            act[1].append(InlineKeyboardButton('Previous', callback_data='showitems:'+parts[1]+':'+str(start-5)+':'+str(start-1)))
+    #     if int(parts[2]) > 0:
+    #         act[1].append(InlineKeyboardButton('Previous', callback_data='showitems:'+parts[1]+':'+str(start-5)+':'+str(start-1)))
 
-        act[1].append(InlineKeyboardButton('Next', callback_data='showitems:'+parts[1]+':'+str(stop+1)+':'+str(stop+5)))
+    #     act[1].append(InlineKeyboardButton('Next', callback_data='showitems:'+parts[1]+':'+str(stop+1)+':'+str(stop+5)))
 
-        reply_markup = InlineKeyboardMarkup(act)
-        bot.send_message(query.message.chat_id, str(docs[last_item_id].text), reply_markup=reply_markup)
-        # update.message.reply_text('Please choose one of the items or press Next:', reply_markup=reply_markup)
+    #     reply_markup = InlineKeyboardMarkup(act)
+    #     bot.send_message(query.message.chat_id, str(docs[last_item_id].text), reply_markup=reply_markup)
+    #     # update.message.reply_text('Please choose one of the items or press Next:', reply_markup=reply_markup)
 
-      # bot.edit_message_text(text=str(data[query.data]), chat_id=query.message.chat_id, message_id=query.message.message_id)
+    #   # bot.edit_message_text(text=str(data[query.data]), chat_id=query.message.chat_id, message_id=query.message.message_id)
 
     if query.data == '1':
 #      update.message.reply_text('Please type the product query.')
@@ -268,7 +271,7 @@ def showitem(bot, chat_id, username):
     act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(last_item_id)))
     act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(last_item_id)))
 
-    if int(parts[2]) > 0:
+    if int(start) > 0:
         act[1].append(InlineKeyboardButton('Previous', callback_data='previous'))
 
     act[1].append(InlineKeyboardButton('Next', callback_data='next'))
