@@ -109,13 +109,13 @@ def button(bot, update):
         showitem(bot, query.message.chat_id, username)
 
     if 'previous' in query.data:
-        uquery[username]['start'] = start-5
-        uquery[username]['stop'] = start-1
+        uquery[username]['stop'] = uquery[username]['start']-1
+        uquery[username]['start'] = uquery[username]['start']-5
         showitem(bot, query.message.chat_id, username)
 
     if 'next' in query.data:
-        uquery[username]['start'] = stop+1
-        uquery[username]['stop'] = stop+5
+        uquery[username]['start'] = uquery[username]['stop']+1
+        uquery[username]['stop'] = uquery[username]['stop']+5
         showitem(bot, query.message.chat_id, username)
     
     if 'payment' in query.data:
