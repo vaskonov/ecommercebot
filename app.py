@@ -390,6 +390,7 @@ def catalogue_process(bot, update):
     if username in uquery:
         del uquery[username]
 
+    uquery[username] = {}
     uquery[username]['query'] = text
     showitem(bot, username)
 
