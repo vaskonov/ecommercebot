@@ -395,6 +395,8 @@ def catalogue_process(bot, update):
 
     uquery[username] = {}
     uquery[username]['query'] = text
+    uquery[username]['start'] = 0
+    uquery[username]['stop'] = 4
     showitem(bot, update.message.chat.id, username)
 
     # text = update.message.text
