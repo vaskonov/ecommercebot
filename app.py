@@ -234,7 +234,7 @@ def button(bot, update):
    #   update.message.reply_text('Please type your question.')
       bot.edit_message_text(text="Please type your question.", chat_id=query.message.chat_id, message_id=query.message.message_id)
 
-def showitem(bot, username):
+def showitem(bot, chat_id, username):
 
     query = uquery[username]['query']
     start = uquery[username]['start'] if 'start' in uquery[username] else 0
@@ -274,7 +274,7 @@ def showitem(bot, username):
     act[1].append(InlineKeyboardButton('Next', callback_data='next'))
 
     reply_markup = InlineKeyboardMarkup(act)
-    bot.send_message(query.message.chat_id, str(docs[last_item_id].text), reply_markup=reply_markup)
+    bot.send_message(chat_id, str(docs[last_item_id].text), reply_markup=reply_markup)
 
 def help(bot, update):
     update.message.reply_text('Please type the product query')
@@ -392,7 +392,7 @@ def catalogue_process(bot, update):
 
     uquery[username] = {}
     uquery[username]['query'] = text
-    showitem(bot, username)
+    showitem(bot, update.message.chat.id, username)
 
     # text = update.message.text
     
