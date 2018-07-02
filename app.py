@@ -248,7 +248,7 @@ def showitem(bot, chat_id, username):
     # results_args, scores = search(query)
     # results_args, scores = search(query)
 
-    r = requests.post("http://0.0.0.0:5000/rankingemb_model", json={'context':[query]})
+    r = requests.post("http://0.0.0.0:5000/rankingemb_model", json={'context':[[query]]})
     # r = requests.post("http://0.0.0.0:5000/rankingemb_model", json={'context':[query], 'start':start, 'stop':stop})
     results_args = json.loads(r.json())['results_args']
     scores = json.loads(r.json())['scores']

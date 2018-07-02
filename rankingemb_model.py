@@ -44,6 +44,7 @@ class RankingEmbModel(Component):
 
         # log.debug('call:', x, start, stop)
         
+        print(x)
         text = x[0][0]
         # start = start[0]
         # stop = stop[0]
