@@ -263,13 +263,13 @@ def showitem(bot, chat_id, username):
     keyboard.append([])
 
     for idx in results_args[start:stop:step]:
-        logger.warning('Result "%s" with scores', str(docs[idx].text))
+        logger.warning('Result "%s" with scores', str(data[idx]['Title']))
         # update.message.reply_text(str(docs[idx].text))
         act = [[]]
         act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(idx)))
         act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(idx)))
         reply_markup = InlineKeyboardMarkup(act)
-        bot.send_message(chat_id, str(docs[idx].text), reply_markup=reply_markup)
+        bot.send_message(chat_id, str(data[idx]['Title']), reply_markup=reply_markup)
     
         # keyboard.append([InlineKeyboardButton(docs[idx].text, callback_data=idx)])
 
@@ -283,7 +283,7 @@ def showitem(bot, chat_id, username):
     act[1].append(InlineKeyboardButton('Next', callback_data='next'))
 
     reply_markup = InlineKeyboardMarkup(act)
-    bot.send_message(chat_id, str(docs[last_item_id].text), reply_markup=reply_markup)
+    bot.send_message(chat_id, str(data[last_item_id]['Title']), reply_markup=reply_markup)
 
 def help(bot, update):
     update.message.reply_text('Please type the product query')
