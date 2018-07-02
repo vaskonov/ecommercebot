@@ -40,13 +40,13 @@ class RankingEmbModel(Component):
         log.debug('everything is transformed')
 
     @overrides
-    def __call__(self, x, start, stop):
+    def __call__(self, x):
 
-        log.debug('call:', x, start, stop)
+        # log.debug('call:', x, start, stop)
         
         text = x[0][0]
-        start = start[0]
-        stop = stop[0]
+        # start = start[0]
+        # stop = stop[0]
 
         text_mean_emb = self.mean_transform([nlp(text)])[0]
         results_mean = [cosine(text_mean_emb, emb) if np.sum(emb)!=0 else math.inf for emb in self.data_mean]
