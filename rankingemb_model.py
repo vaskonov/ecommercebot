@@ -59,7 +59,7 @@ class RankingEmbModel(Component):
             'results_args': results_args.tolist(),
             'scores': scores.tolist()
         }
-        return json.dumps(ret), 200
+        return json.dumps(ret)
         
     # def train(self, data):
     #     print(str(data))

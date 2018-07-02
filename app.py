@@ -520,19 +520,18 @@ if __name__ == '__main__':
         data = pickle.load(handle)
         logger.warning('Data set loaded "%s"', str(len(data)))
 
-    with open("processed.pickle.phones.big", "rb") as handle:
+    # with open("processed.pickle.phones.big", "rb") as handle:
     #with open("processed.pickle.big", "rb") as handle:
-        doc_bytes, vocab_bytes = pickle.load(handle)
+        # doc_bytes, vocab_bytes = pickle.load(handle)
 
-    nlp.vocab.from_bytes(vocab_bytes)
-    docs = [Doc(nlp.vocab).from_bytes(b) for b in doc_bytes]
-    logger.warning('Nlped data set loaded "%s"', str(len(docs)))
+    # nlp.vocab.from_bytes(vocab_bytes)
+    # docs = [Doc(nlp.vocab).from_bytes(b) for b in doc_bytes]
+    # logger.warning('Nlped data set loaded "%s"', str(len(docs)))
 
-    # docs_text = [doc.text for doc in docs]
 
-    emb_mean.fit(docs)
-    data_mean = emb_mean.transform(docs)
-    print('meaned')
+    # emb_mean.fit(docs)
+    # data_mean = emb_mean.transform(docs)
+    # print('meaned')
 
 #    emb_tfidf = TfidfEmbeddingVectorizerSpacy()
 #    emb_tfidf.fit(docs)
