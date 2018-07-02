@@ -1,0 +1,50 @@
+{
+ "chainer": {
+    "in": ["x"],
+    "in_y": ["y"],
+    "pipe": [
+      {
+        "in": ["x"],
+        "name": "lazy_tokenizer",
+        "out": ["x"]
+      },
+      {
+        "in": ["x"],
+        "name": "str_lower",
+        "out": ["x_lower"]
+      },
+      {
+        "in": ["x_lower"],
+        "name": "sanitizer",
+        "nums": true,
+        "out": ["x_san"]
+      },
+      {
+        "in": ["x_san"],
+        "id": "glove_emb",
+        "name": "glove",
+        "pad_zero": true,
+        "pad_with_zeros": true,
+        "dim": 50,
+        "load_path": "embeddings/glove.6B.50d.txt",
+        "out": ["x_emb"]
+      },
+      {
+        "in": ["x","x_emb"],
+        "id": "rankingemb_model",
+        "name": "rankingemb_model",
+        "embedder": "#glove_emb",
+        "out": ["y"]
+      }],
+    "out": ["y"]
+   },
+   "metadata": {
+    "labels": {
+      "telegram_utils": "RankingEmbModel",
+      "server_utils": "RankingEmbModel"
+    },
+    "download": [
+    ]
+  }
+
+}
