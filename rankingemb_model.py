@@ -25,8 +25,9 @@ nlp = spacy.load('en_core_web_sm', parser=False, ner=False)
 @register('rankingemb_model')
 class RankingEmbModel(Component):
     def __init__(self, **kwargs):
+        # pass
+        self.glove_model = kwargs['embedder']
         pass
-        # self.glove_model = kwargs['embedder']
 
         # with open('/tmp/phones.pickle', 'rb') as handle:
         #     print('Data set is loading')
