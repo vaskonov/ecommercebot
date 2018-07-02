@@ -10,64 +10,57 @@ from collections import Counter, defaultdict
 from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.metrics.distance import *
 from nltk.translate.bleu_score import *
+from scipy.spatial.distance import cosine, euclidean
 
 from deeppavlov.core.commands.utils import expand_path
 from deeppavlov.core.common.log import get_logger
 from deeppavlov.core.common.registry import register
-from deeppavlov.core.data.utils import download
+from deeppavlov.core.data.utils import download, jsonify_data
 from deeppavlov.core.models.component import Component
 from deeppavlov.core.models.estimator import Estimator
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 # nlp = spacy.load('en_core_web_lg', parser=False)
 nlp = spacy.load('en_core_web_sm', parser=False, ner=False)
 
 @register('rankingemb_model')
 class RankingEmbModel(Component):
     def __init__(self, **kwargs):
-        # pass
         self.glove_model = kwargs['embedder']
-        pass
 
-        # with open('/tmp/phones.pickle', 'rb') as handle:
-        #     print('Data set is loading')
-        #     data = pickle.load(handle)
-        #     print('Data set loaded')
+        with open('/tmp/phones.pickle', 'rb') as handle:
+            log.debug('Data set is loading')
+            self.data = pickle.load(handle)
+            log.debug('Data set loaded')
 
-        # data_nlped = [nlp(item['Title']) for item in data]
-        # print('everything is nlped')
+        data_nlped = [nlp(item['Title']) for item in self.data]
+        log.debug('everything is nlped')
 
-        # self.mean_transform(data_nlped)
-        # print('everything is transformed')
-
-        
-#    @overrides
-#    def load(self):
-#        pass
-
-#    @overrides
-#    def save(self):
-#        pass
+        self.data_mean = self.mean_transform(data_nlped)
+        log.debug('everything is transformed')
 
     @overrides
-    def __call__(self, x, x_emb):
+    def __call__(self, x, start, stop):
 
-                
-        # print(x)
-        # print(x_emb)
+        log.debug('call:', x, start, stop)
+        
+        text = x[0][0]
+        start = start[0]
+        stop = stop[0]
 
-        # y = []
-        # for idx, a in enumerate(x):
-        #     print(idx)
-        #     print(a)
-        #     print(x_emb[idx])
-        #     print("--------------------")
-        #     # for b in a:
-        #         # print(b)
-        #         # print(b.pos_)
-        # y.append(1)
-        return x
+        text_mean_emb = self.mean_transform([nlp(text)])[0]
+        results_mean = [cosine(text_mean_emb, emb) if np.sum(emb)!=0 else math.inf for emb in self.data_mean]
 
+        scores = np.mean([results_mean], axis=0)
+        results_args = np.argsort(scores)
+
+        # fetch_data = [self.data[idx] for idx in results_args[start:stop+1]]
+        ret = {
+            'results_args': results_args.tolist(),
+            'scores': scores.tolist()
+        }
+        return json.dumps(ret), 200
+        
     # def train(self, data):
     #     print(str(data))
     #     pass

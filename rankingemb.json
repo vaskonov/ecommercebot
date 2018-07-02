@@ -1,6 +1,6 @@
 {
  "chainer": {
-    "in": ["x"],
+    "in": ["x", "start", "stop"],
     "in_y": ["y"],
     "pipe": [
       {
@@ -30,7 +30,7 @@
         "out": ["x_emb"]
       },
       {
-        "in": ["x","x_emb"],
+        "in": ["x","start","stop"],
         "id": "rankingemb_model",
         "name": "rankingemb_model",
         "embedder": "#glove_emb",

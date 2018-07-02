@@ -15,9 +15,10 @@ import spacy
 from spacy.tokens import Doc
 import math
 from decimal import Decimal
+import requests
 
 # nlp = spacy.load('en_vectors_web_lg', parser=False)
-nlp = spacy.load('en_core_web_lg', parser=False)
+# nlp = spacy.load('en_core_web_lg', parser=False)
 # nlp_en = spacy.load('en', parser=False)
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -27,7 +28,7 @@ logger = logging.getLogger(__name__)
 handler = handlers.RotatingFileHandler('foo.log', maxBytes=(1048576*5), backupCount=7)
 logger.addHandler(handler)
 
-emb_mean = MeanEmbeddingVectorizerSpacy()
+# emb_mean = MeanEmbeddingVectorizerSpacy()
 # emb_tfidf = TfidfEmbeddingVectorizerSpacy()
 
 CHOOSING, FAQ, ORDERS, CATALOG, MAIN = range(5)
@@ -244,7 +245,12 @@ def showitem(bot, chat_id, username):
     stop = uquery[username]['stop'] if 'stop' in uquery[username] else 4
     
     logger.warning('Next was pressed "%s"', str(uquery[username]))
-    results_args, scores = search(query)
+    # results_args, scores = search(query)
+    # results_args, scores = search(query)
+
+    r = requests.post("http://0.0.0.0:5000/rankingemb_model", json={'context':[query], 'start':start, 'stop':stop})
+    results_args = json.loads(r.json())['results_args']
+    scores = json.loads(r.json())['scores']
 
     step = 1
     last_item_id = results_args[stop]
