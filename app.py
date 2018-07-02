@@ -263,7 +263,7 @@ def showitem(bot, chat_id, username):
     keyboard.append([])
 
     for idx in results_args[start:stop:step]:
-        logger.warning('Result "%s" with scores', str(data[idx]['Title']))
+        logger.warning('Result "%s" with score "%s"', str(data[idx]['Title']), str(scores[idx]))
         # update.message.reply_text(str(docs[idx].text))
         act = [[]]
         act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(idx)))
