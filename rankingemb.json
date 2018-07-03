@@ -30,7 +30,7 @@
         "out": ["x_emb"]
       },
       {
-        "in": ["x","start","stop"],
+        "in": ["x"],
         "id": "rankingemb_model",
         "name": "rankingemb_model",
         "embedder": "#glove_emb",
