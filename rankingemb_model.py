@@ -1,7 +1,9 @@
 from overrides import overrides
 import pickle
 import spacy
+from spacy.matcher import Matcher
 import sys
+import re
 import math
 import numpy as np
 from numpy import linalg as la
@@ -21,12 +23,14 @@ from deeppavlov.core.models.estimator import Estimator
 
 log = get_logger(__name__)
 # nlp = spacy.load('en_core_web_lg', parser=False)
-nlp = spacy.load('en_core_web_sm', parser=False, ner=False)
+nlp = spacy.load('en', parser=False)
 
 @register('rankingemb_model')
+
 class RankingEmbModel(Component):
     def __init__(self, **kwargs):
         self.glove_model = kwargs['embedder']
+        self.dim = int(kwargs['dim'])
 
         with open('/tmp/phones.pickle', 'rb') as handle:
             log.debug('Data set is loading')
@@ -42,21 +46,36 @@ class RankingEmbModel(Component):
     @overrides
     def __call__(self, x):
 
-        # log.debug('call:', x, start, stop)
-        
-        text = x[0][0]
+        log.debug(str(x))
+        text = " ".join(x[0])
+        # if type(x) == str:
+            # text = x
+        # elif type(x[0]) == str:
+            # text = x[0]
+        # elif type(x[0][0]) == str:
+            # text = x[0][0]
+
+        log.debug(text)
+
         # start = start[0]
         # stop = stop[0]
-
-        text_mean_emb = self.mean_transform([nlp(text)])[0]
+        doc = nlp(text)
+        
+        text_mean_emb = self.mean_transform([doc])[0]
         results_mean = [cosine(text_mean_emb, emb) if np.sum(emb)!=0 else math.inf for emb in self.data_mean]
 
         scores = np.mean([results_mean], axis=0)
         results_args = np.argsort(scores)
 
+        money_res = find_money(doc)
+        if 'num1' in money_res:
+            log.debug('results before money '+str(len(results_args)))
+            results_args = [idx for idx in results_args.tolist() if price(self.data[idx])>=money_res['num1'] and price(self.data[idx])<=money_res['num2']]
+            log.debug('results after money '+str(len(results_args)))
+            
         # fetch_data = [self.data[idx] for idx in results_args[start:stop+1]]
         ret = {
-            'results_args': results_args.tolist(),
+            'results_args': results_args,
             'scores': scores.tolist()
         }
         return json.dumps(ret)
@@ -87,7 +106,7 @@ class RankingEmbModel(Component):
             if len(row)!=0:
                 row_mean = np.mean(row, axis=0)
             else:
-                row_mean = np.zeros(300)
+                row_mean = np.zeros(self.dim)
             out.append(row_mean)
         return np.array(out)
 
@@ -112,6 +131,51 @@ class RankingEmbModel(Component):
     #     # self.save_path.parent.mkdir(parents=True, exist_ok=True)
     #     # pickle.dump((self.emb_dim, self.emb_mat, self.token2idx_dict), self.save_path.open('wb'))
     
+def price(item):
+    if 'ListPrice' in item:
+        return float(item['ListPrice'].split('$')[1].replace(",",""))
+    else:
+        return 0
+
+def find_money(doc):
+    below = lambda text: bool(re.compile(r'[below|cheap]').match(text))
+    BELOW = nlp.vocab.add_flag(below)
+
+    above = lambda text: bool(re.compile(r'[above|not cheap|start]').match(text))
+    ABOVE = nlp.vocab.add_flag(above)
+
+    matcher = Matcher(nlp.vocab)
+    matcher.add('below', None, [{BELOW: True},{'LOWER':'than', 'OP':'?'},{'LOWER':'from', 'OP':'?'}, 
+                        {'ORTH':'$', 'OP':'?'}, {'ENT_TYPE': 'MONEY', 'LIKE_NUM':True}])
+    matcher.add('above', None, [{ABOVE: True},{'LOWER':'than', 'OP':'?'},{'LOWER':'from', 'OP':'?'}, 
+                        {'ORTH':'$', 'OP':'?'}, {'ENT_TYPE': 'MONEY', 'LIKE_NUM':True}])
+
+    #  {'ENT_TYPE': 'MONEY', 'LIKE_NUM':True}
+    matches = matcher(doc)
+
+    result = {}
+    for match_id, start, end in matches:
+        string_id = nlp.vocab.strings[match_id] 
+        span = doc[start:end]
+        print(match_id, string_id, start, end, span.text)
+
+        num_token = [token for token in span if token.like_num == True]
+        if len(num_token)!=1:
+            print("Error", str(num_token))
+
+        if string_id == 'below':
+            result['num1'] = 0
+            result['num2'] = float(num_token[0].text)
+
+        if string_id == 'above':
+            result['num1'] = float(num_token[0].text)
+            result['num2'] = 1000000
+
+        # result['op'] = string_id
+        # result['num'] = doc[end]
+        
+        log.debug('find_money '+str(result))
+    return result
 
 def filter_nlp(tokens):
     res = []
