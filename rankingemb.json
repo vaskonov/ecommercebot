@@ -34,6 +34,7 @@
         "id": "rankingemb_model",
         "name": "rankingemb_model",
         "embedder": "#glove_emb",
+        "dim": 300,
         "out": ["y"]
       }],
     "out": ["y"]
