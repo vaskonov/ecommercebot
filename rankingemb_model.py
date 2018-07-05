@@ -47,7 +47,7 @@ class RankingEmbModel(Component):
     def __call__(self, x):
 
         log.debug(str(x))
-        text = " ".join(x[0])
+        text = " ".join(x[0]).replace("$", " dollars ")
         # if type(x) == str:
             # text = x
         # elif type(x[0]) == str:
@@ -61,22 +61,24 @@ class RankingEmbModel(Component):
         # stop = stop[0]
         doc = nlp(text)
         
+        doc, money_res = find_money(doc)
+        print(doc)
+        
         text_mean_emb = self.mean_transform([doc])[0]
         results_mean = [cosine(text_mean_emb, emb) if np.sum(emb)!=0 else math.inf for emb in self.data_mean]
 
-        scores = np.mean([results_mean], axis=0)
-        results_args = np.argsort(scores)
+        scores = np.mean([results_mean], axis=0).tolist()
+        results_args = np.argsort(scores).tolist()
 
-        money_res = find_money(doc)
         if 'num1' in money_res:
             log.debug('results before money '+str(len(results_args)))
-            results_args = [idx for idx in results_args.tolist() if price(self.data[idx])>=money_res['num1'] and price(self.data[idx])<=money_res['num2']]
+            results_args = [idx for idx in results_args if price(self.data[idx])>=money_res['num1'] and price(self.data[idx])<=money_res['num2']]
             log.debug('results after money '+str(len(results_args)))
             
         # fetch_data = [self.data[idx] for idx in results_args[start:stop+1]]
         ret = {
             'results_args': results_args,
-            'scores': scores.tolist()
+            'scores': scores
         }
         return json.dumps(ret)
         
@@ -135,13 +137,13 @@ def price(item):
     if 'ListPrice' in item:
         return float(item['ListPrice'].split('$')[1].replace(",",""))
     else:
-        return 0
+        return math.inf
 
 def find_money(doc):
-    below = lambda text: bool(re.compile(r'[below|cheap]').match(text))
+    below = lambda text: bool(re.compile(r'below|cheap').match(text))
     BELOW = nlp.vocab.add_flag(below)
 
-    above = lambda text: bool(re.compile(r'[above|not cheap|start]').match(text))
+    above = lambda text: bool(re.compile(r'above|start').match(text))
     ABOVE = nlp.vocab.add_flag(above)
 
     matcher = Matcher(nlp.vocab)
@@ -154,6 +156,8 @@ def find_money(doc):
     matches = matcher(doc)
 
     result = {}
+    doc1 = list(doc)
+
     for match_id, start, end in matches:
         string_id = nlp.vocab.strings[match_id] 
         span = doc[start:end]
@@ -175,7 +179,9 @@ def find_money(doc):
         # result['num'] = doc[end]
         
         log.debug('find_money '+str(result))
-    return result
+        del doc1[start:end+1]     
+
+    return doc1, result
 
 def filter_nlp(tokens):
     res = []

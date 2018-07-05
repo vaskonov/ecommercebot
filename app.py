@@ -270,7 +270,13 @@ def showitem(bot, chat_id, username):
         act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(idx)))
         act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(idx)))
         reply_markup = InlineKeyboardMarkup(act)
-        bot.send_message(chat_id, str(data[idx]['Title']), reply_markup=reply_markup)
+
+        title = data[idx]['Title']
+
+        if 'ListPrice' in data[idx]:
+            title += " - " + data[idx]['ListPrice'].split('$')[1] + "$"
+
+        bot.send_message(chat_id, title, reply_markup=reply_markup)
     
         # keyboard.append([InlineKeyboardButton(docs[idx].text, callback_data=idx)])
 
@@ -284,7 +290,13 @@ def showitem(bot, chat_id, username):
     act[1].append(InlineKeyboardButton('Next', callback_data='next'))
 
     reply_markup = InlineKeyboardMarkup(act)
-    bot.send_message(chat_id, str(data[last_item_id]['Title']), reply_markup=reply_markup)
+
+    titlel = data[last_item_id]['Title']
+
+    if 'ListPrice' in data[last_item_id]:
+        titlel += " - " + data[last_item_id]['ListPrice'].split('$')[1] + "$"
+
+    bot.send_message(chat_id, titlel, reply_markup=reply_markup)
 
 def help(bot, update):
     update.message.reply_text('Please type the product query')
@@ -490,7 +502,7 @@ def main():
             CATALOG: [MessageHandler(Filters.text, catalogue_process),]
             # ORDERS: [MessageHandler(Filters.text, catalogue_process),]
         },
-        fallbacks=[CommandHandler('start', start)],
+        fallbacks=[CommandHandler('start', start),],
         )
     dp.add_handler(CommandHandler("help", help))
 
@@ -500,7 +512,7 @@ def main():
     # dp.add_handler(CommandHandler("start", start))
     # dp.add_handler(CommandHandler("card", card, pass_args=True))
     dp.add_handler(CallbackQueryHandler(button))
-    # dp.add_handler(CommandHandler("help", help))
+    dp.add_handler(MessageHandler(Filters.text, main_process))
 
     # dp.add_handler(MessageHandler(Filters.text, echo))
 
