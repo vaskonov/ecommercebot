@@ -158,20 +158,24 @@ def find_money(doc):
     result = {}
     doc1 = list(doc)
 
+    negated = False
     for match_id, start, end in matches:
         string_id = nlp.vocab.strings[match_id] 
         span = doc[start:end]
-        print(match_id, string_id, start, end, span.text)
+        for child in doc[start].children:
+            if child.dep_ == 'neg':
+                negated = True
 
+        print(match_id, string_id, start, end, span.text, negated)
         num_token = [token for token in span if token.like_num == True]
         if len(num_token)!=1:
             print("Error", str(num_token))
 
-        if string_id == 'below':
+        if (string_id == 'below' and negated == False) || (string_id == 'above' and negated == True):
             result['num1'] = 0
             result['num2'] = float(num_token[0].text)
 
-        if string_id == 'above':
+        if (string_id == 'above' and negated == False) || (string_id == 'below' and negated == True):
             result['num1'] = float(num_token[0].text)
             result['num2'] = 1000000
 
