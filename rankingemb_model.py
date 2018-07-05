@@ -171,11 +171,11 @@ def find_money(doc):
         if len(num_token)!=1:
             print("Error", str(num_token))
 
-        if (string_id == 'below' and negated == False) || (string_id == 'above' and negated == True):
+        if (string_id == 'below' and negated == False) or (string_id == 'above' and negated == True):
             result['num1'] = 0
             result['num2'] = float(num_token[0].text)
 
-        if (string_id == 'above' and negated == False) || (string_id == 'below' and negated == True):
+        if (string_id == 'above' and negated == False) or (string_id == 'below' and negated == True):
             result['num1'] = float(num_token[0].text)
             result['num2'] = 1000000
 
