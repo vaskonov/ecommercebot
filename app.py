@@ -364,6 +364,8 @@ def faq_process(bot, update):
 
 
 def main_process(bot, update):
+
+    catalogue_process(bot, update)
     query = update.message.text
     logger.warning('MAIN process "%s"', query)
 
