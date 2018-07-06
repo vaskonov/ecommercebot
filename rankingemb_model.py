@@ -38,7 +38,10 @@ class RankingEmbModel(Component):
             log.debug('Data set loaded')
 
         data_nlped = [nlp(item['Title']) for item in self.data]
-        log.debug('everything is nlped')
+        log.debug('Data is nlped')
+
+        feat_nlped = [nlp(item['Feature']) for item in self.data]
+        log.debug('Feature is nlped')
 
         self.data_mean = self.mean_transform(data_nlped)
         log.debug('everything is transformed')
@@ -48,6 +51,7 @@ class RankingEmbModel(Component):
 
         log.debug(str(x))
         text = " ".join(x[0]).replace("$", " dollars ")
+
         # if type(x) == str:
             # text = x
         # elif type(x[0]) == str:
@@ -60,14 +64,16 @@ class RankingEmbModel(Component):
         # start = start[0]
         # stop = stop[0]
         doc = nlp(text)
+        doc_fil = [w for w in doc if w.tag_ in ['NNP', 'NN', 'JJ']]
         
         doc, money_res = find_money(doc)
         print(doc)
         
-        text_mean_emb = self.mean_transform([doc])[0]
+        text_mean_emb = self.mean_transform([doc_fil])[0]
         results_mean = [cosine(text_mean_emb, emb) if np.sum(emb)!=0 else math.inf for emb in self.data_mean]
+        results_blue = [bleu_string_distance(lemmas(feat), lemmas(doc)) for feat in feat_nlped]
 
-        scores = np.mean([results_mean], axis=0).tolist()
+        scores = np.mean([results_mean, results_blue], axis=0).tolist()
         results_args = np.argsort(scores).tolist()
 
         if 'num1' in money_res:
@@ -195,6 +201,17 @@ def filter_nlp(tokens):
             res.append(word)
     return res
 
+def lemmas(doc):
+    return [w.lemma_ for w in doc]
+
 def filwords(words):
     tokens = nlp(words)
     return [w.lemma_ for w in filter_nlp(tokens)]
+
+def bleu_string_distance(q_list,a_list):
+  # 0 - no overlab (bad)
+  # 1 - exact match (good)
+    smooth = SmoothingFunction()
+    return 1-sentence_bleu([q_list], a_list, weights=(1,), auto_reweigh=False, emulate_multibleu=False, smoothing_function=smooth.method1)
+
+# print(bleu_string_distance(['i', 'love','nature'], ['i','love'],))
