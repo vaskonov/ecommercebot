@@ -135,7 +135,7 @@ def button(bot, update):
 
     if 'details' in query.data:
         parts = query.data.split(":")
-        cats = ['Title', 'Manufacturer', 'Model', 'ListPrice', 'Binding']
+        cats = ['Title', 'Manufacturer', 'Model', 'ListPrice', 'Binding', 'Feature']
         txt = ""
         for cat in cats:
             if cat in data[int(parts[1])]:
