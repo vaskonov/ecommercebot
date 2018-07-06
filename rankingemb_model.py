@@ -106,7 +106,7 @@ class RankingEmbModel(Component):
         out = []
         for words in X:
             row = []
-            for w in filter_nlp(words):
+            for w in filter_nlp_emb(words):
                 if debug:
                     print(w)
                     print(w.lemma_)
@@ -195,6 +195,10 @@ def find_money(doc):
         del doc1[start:end+1]     
 
     return doc1, result
+
+
+def filter_nlp_emb(doc):
+    return [w for w in doc if w.tag_ in ['NNP', 'NN', 'JJ', 'PROPN']]    
 
 def filter_nlp(tokens):
     res = []
