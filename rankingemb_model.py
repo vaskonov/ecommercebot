@@ -64,15 +64,17 @@ class RankingEmbModel(Component):
         # start = start[0]
         # stop = stop[0]
         doc = nlp(text)
-        doc_fil = [w for w in doc if w.tag_ in ['NNP', 'NN', 'JJ']]
+        doc_fil = doc
+        #doc_fil = [w for w in doc if w.tag_ in ['NNP', 'NN', 'JJ', 'PROPN']]
         
         doc, money_res = find_money(doc)
         print(doc)
+        print(filter_nlp(doc))
         
         text_mean_emb = self.mean_transform([doc_fil])[0]
         results_mean = [cosine(text_mean_emb, emb) if np.sum(emb)!=0 else math.inf for emb in self.data_mean]
         results_blue = [bleu_string_distance(lemmas(feat), lemmas(filter_nlp(doc))) for feat in self.feat_nlped]
-        results_title = = [bleu_string_distance(lemmas(title), lemmas(filter_nlp(doc))) for title in self.data_nlped]
+        results_title = [bleu_string_distance(lemmas(title), lemmas(filter_nlp(doc))) for title in self.data_nlped]
 
         scores = np.mean([results_mean, results_blue, results_title], axis=0).tolist()
         results_args = np.argsort(scores).tolist()
