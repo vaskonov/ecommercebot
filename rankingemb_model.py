@@ -37,13 +37,13 @@ class RankingEmbModel(Component):
             self.data = pickle.load(handle)
             log.debug('Data set loaded')
 
-        self.data_nlped = [nlp(item['Title']) for item in self.data]
-        log.debug('Data is nlped')
+        self.title_nlped = [nlp(item['Title']) for item in self.data]
+        log.debug('Title is nlped')
 
-        self.feat_nlped = [nlp(item['Feature']) if 'Feature' in item else nlp('') for item in self.data]
+        self.feat_nlped = [nlp(item['Title']+'.'+item['Feature']) if 'Feature' in item else nlp(item['Title']) for item in self.data]
         log.debug('Feature is nlped')
 
-        self.data_mean = self.mean_transform(self.data_nlped)
+        self.title_mean = self.mean_transform(self.title_nlped)
         log.debug('everything is transformed')
 
     @overrides
@@ -69,14 +69,14 @@ class RankingEmbModel(Component):
         
         doc, money_res = find_money(doc)
         print(doc)
-        print(filter_nlp(doc))
+        print('filter_nlp:'. filter_nlp(doc))
         
         text_mean_emb = self.mean_transform([doc_fil])[0]
-        results_mean = [cosine(text_mean_emb, emb) if np.sum(emb)!=0 else math.inf for emb in self.data_mean]
-        results_blue = [bleu_string_distance(lemmas(feat), lemmas(filter_nlp(doc))) for feat in self.feat_nlped]
-        results_title = [bleu_string_distance(lemmas(title), lemmas(filter_nlp(doc))) for title in self.data_nlped]
+        # results_mean = [cosine(text_mean_emb, emb) if np.sum(emb)!=0 else math.inf for emb in self.title_mean]
+        results_blue_feat = [bleu_string_distance(lemmas(feat), lemmas(filter_nlp(doc), (0.3,0.7))) for feat in self.feat_nlped]
+        results_blue_title = [bleu_string_distance(lemmas(title), lemmas(filter_nlp_title(doc), (1,))) for title in self.title_nlped]
 
-        scores = np.mean([results_mean, results_blue, results_title], axis=0).tolist()
+        scores = np.mean([results_blue_feat, results_blue_title], axis=0).tolist()
         results_args = np.argsort(scores).tolist()
 
         if 'num1' in money_res:
@@ -197,6 +197,9 @@ def find_money(doc):
     return doc1, result
 
 
+def filter_nlp_title(doc):
+    return [w for w in doc if w.tag_ in ['NNP', 'NN', 'PROPN'] and not w.is_num]
+
 def filter_nlp_emb(doc):
     return [w for w in doc if w.tag_ in ['NNP', 'NN', 'JJ', 'PROPN']]    
 
@@ -215,10 +218,10 @@ def filwords(words):
     tokens = nlp(words)
     return [w.lemma_ for w in filter_nlp(tokens)]
 
-def bleu_string_distance(q_list,a_list):
+def bleu_string_distance(q_list,a_list,weights):
   # 0 - no overlab (bad)
   # 1 - exact match (good)
     smooth = SmoothingFunction()
-    return 1-sentence_bleu([q_list], a_list, weights=(0.3,0.7), auto_reweigh=False, emulate_multibleu=False, smoothing_function=smooth.method1)
+    return 1-sentence_bleu([q_list], a_list, weights, auto_reweigh=False, emulate_multibleu=False, smoothing_function=smooth.method1)
 
 # print(bleu_string_distance(['i', 'love','nature'], ['i','love'],))
