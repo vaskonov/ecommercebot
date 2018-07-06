@@ -37,13 +37,13 @@ class RankingEmbModel(Component):
             self.data = pickle.load(handle)
             log.debug('Data set loaded')
 
-        data_nlped = [nlp(item['Title']) for item in self.data]
+        self.data_nlped = [nlp(item['Title']) for item in self.data]
         log.debug('Data is nlped')
 
         self.feat_nlped = [nlp(item['Feature']) if 'Feature' in item else nlp('') for item in self.data]
         log.debug('Feature is nlped')
 
-        self.data_mean = self.mean_transform(data_nlped)
+        self.data_mean = self.mean_transform(self.data_nlped)
         log.debug('everything is transformed')
 
     @overrides
@@ -72,8 +72,9 @@ class RankingEmbModel(Component):
         text_mean_emb = self.mean_transform([doc_fil])[0]
         results_mean = [cosine(text_mean_emb, emb) if np.sum(emb)!=0 else math.inf for emb in self.data_mean]
         results_blue = [bleu_string_distance(lemmas(feat), lemmas(filter_nlp(doc))) for feat in self.feat_nlped]
+        results_title = = [bleu_string_distance(lemmas(title), lemmas(filter_nlp(doc))) for title in self.data_nlped]
 
-        scores = np.mean([results_mean, results_blue], axis=0).tolist()
+        scores = np.mean([results_mean, results_blue, results_title], axis=0).tolist()
         results_args = np.argsort(scores).tolist()
 
         if 'num1' in money_res:
