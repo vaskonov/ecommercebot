@@ -40,7 +40,7 @@ class RankingEmbModel(Component):
         data_nlped = [nlp(item['Title']) for item in self.data]
         log.debug('Data is nlped')
 
-        feat_nlped = [nlp(item['Feature']) for item in self.data]
+        self.feat_nlped = [nlp(item['Feature']) if 'Feature' in item else nlp('') for item in self.data]
         log.debug('Feature is nlped')
 
         self.data_mean = self.mean_transform(data_nlped)
@@ -71,7 +71,7 @@ class RankingEmbModel(Component):
         
         text_mean_emb = self.mean_transform([doc_fil])[0]
         results_mean = [cosine(text_mean_emb, emb) if np.sum(emb)!=0 else math.inf for emb in self.data_mean]
-        results_blue = [bleu_string_distance(lemmas(feat), lemmas(doc)) for feat in feat_nlped]
+        results_blue = [bleu_string_distance(lemmas(feat), lemmas(filter_nlp(doc))) for feat in self.feat_nlped]
 
         scores = np.mean([results_mean, results_blue], axis=0).tolist()
         results_args = np.argsort(scores).tolist()
@@ -197,7 +197,7 @@ def filter_nlp(tokens):
     res = []
     for word in tokens:
 # WRB WDT WP
-        if word.tag_ not in ['MD', 'SP', 'DT', 'PRP', 'TO']: #VBP VBZ
+        if word.tag_ not in ['MD', 'SP', 'DT', 'PRP', 'TO'] and word.is_stop == False and word.is_punct == False: #VBP VBZ
             res.append(word)
     return res
 
@@ -212,6 +212,6 @@ def bleu_string_distance(q_list,a_list):
   # 0 - no overlab (bad)
   # 1 - exact match (good)
     smooth = SmoothingFunction()
-    return 1-sentence_bleu([q_list], a_list, weights=(1,), auto_reweigh=False, emulate_multibleu=False, smoothing_function=smooth.method1)
+    return 1-sentence_bleu([q_list], a_list, weights=(0.3,0.7), auto_reweigh=False, emulate_multibleu=False, smoothing_function=smooth.method1)
 
 # print(bleu_string_distance(['i', 'love','nature'], ['i','love'],))
