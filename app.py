@@ -532,7 +532,7 @@ if __name__ == '__main__':
     
     # nlp = spacy.load('en_core_web_md', parser=False)
 
-    with open('phones.pickle', 'rb') as handle:
+    with open('/tmp/phones.pickle', 'rb') as handle:
         data = pickle.load(handle)
         logger.warning('Data set loaded "%s"', str(len(data)))
 
