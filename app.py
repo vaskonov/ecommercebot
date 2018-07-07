@@ -140,10 +140,10 @@ def button(bot, update):
         for cat in cats:
             if cat in data[int(parts[1])]:
                 if cat == 'ListPrice':
-                    txt += cat + ':$' + data[int(parts[1])][cat].split('$')[1] + "\n"
+                    txt += '<b>' + cat + '</b>' + ':$' + data[int(parts[1])][cat].split('$')[1] + "\n"
                 else:
-                    txt += cat + ':' + data[int(parts[1])][cat] + "\n"
-        bot.send_message(query.message.chat_id, txt)
+                    txt += '<b>' + cat + '</b>' + ':' + data[int(parts[1])][cat] + "\n"
+        bot.send_message(query.message.chat_id, txt, parse_mode=telegram.ParseMode.HTML)
 
     if 'answer' in query.data:
         parts = query.data.split(":")
