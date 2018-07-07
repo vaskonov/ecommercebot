@@ -69,12 +69,15 @@ class RankingEmbModel(Component):
         
         doc, money_res = find_money(doc)
         print(doc)
-        print('filter_nlp:'. filter_nlp(doc))
+        print('filter_nlp:', filter_nlp(doc))
         
         text_mean_emb = self.mean_transform([doc_fil])[0]
         # results_mean = [cosine(text_mean_emb, emb) if np.sum(emb)!=0 else math.inf for emb in self.title_mean]
-        results_blue_feat = [bleu_string_distance(lemmas(feat), lemmas(filter_nlp(doc), (0.3,0.7))) for feat in self.feat_nlped]
-        results_blue_title = [bleu_string_distance(lemmas(title), lemmas(filter_nlp_title(doc), (1,))) for title in self.title_nlped]
+        results_blue_feat = [bleu_string_distance(lemmas(feat), lemmas(filter_nlp(doc)), (0.3, 0.7)) for feat in self.feat_nlped]
+        print("features calculated")
+
+        results_blue_title = [bleu_string_distance(lemmas(title), lemmas(filter_nlp_title(doc)), (1,)) for title in self.title_nlped]
+        print("blue calculated")
 
         scores = np.mean([results_blue_feat, results_blue_title], axis=0).tolist()
         results_args = np.argsort(scores).tolist()
@@ -198,7 +201,7 @@ def find_money(doc):
 
 
 def filter_nlp_title(doc):
-    return [w for w in doc if w.tag_ in ['NNP', 'NN', 'PROPN'] and not w.is_num]
+    return [w for w in doc if w.tag_ in ['NNP', 'NN', 'PROPN'] and not w.like_num]
 
 def filter_nlp_emb(doc):
     return [w for w in doc if w.tag_ in ['NNP', 'NN', 'JJ', 'PROPN']]    
