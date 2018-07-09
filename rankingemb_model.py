@@ -50,7 +50,8 @@ class RankingEmbModel(Component):
     def __call__(self, x):
 
         log.debug(str(x))
-        text = " ".join(x[0]).replace("$", " dollars ")
+      #  text = " ".join(x[0]).replace("$", " dollars ")
+        text = " ".join(x[0])
 
         # if type(x) == str:
             # text = x
