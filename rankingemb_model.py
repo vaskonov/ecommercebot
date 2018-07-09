@@ -46,6 +46,12 @@ class RankingEmbModel(Component):
         self.title_mean = self.mean_transform(self.title_nlped)
         log.debug('everything is transformed')
 
+        with open('../faq.json', 'r') as f:
+            self.faq_js = json.load(f)
+
+        with open('../intents.json', 'r') as f:
+            self.intents = json.load(f)
+
     @overrides
     def __call__(self, x):
 
@@ -53,27 +59,94 @@ class RankingEmbModel(Component):
       #  text = " ".join(x[0]).replace("$", " dollars ")
         text = " ".join(x[0])
 
-        # if type(x) == str:
-            # text = x
-        # elif type(x[0]) == str:
-            # text = x[0]
-        # elif type(x[0][0]) == str:
-            # text = x[0][0]
-
         log.debug(text)
 
-        # start = start[0]
-        # stop = stop[0]
         doc = nlp(text)
-        doc_fil = doc
+        # doc_fil = doc
         #doc_fil = [w for w in doc if w.tag_ in ['NNP', 'NN', 'JJ', 'PROPN']]
         
         doc, money_res = find_money(doc)
-        print(doc)
+        print('unfiltered_nlp:', doc)
         print('filter_nlp:', filter_nlp(doc))
         
-        text_mean_emb = self.mean_transform([doc_fil])[0]
+        if 'num1' not in money_res:
+            results = classify_faq(doc)
+
+            results_arg = np.argsort(results)
+            print('Results for faq "%s"', str(results_arg))
+
+            if results[results_arg[0]] < 0.2:
+
+                print('FAQ question is detected with answer', self.faq_js.values()[results_arg[0]])
+
+                return json.dumps({
+                    'intent': 'faq',
+                    'text': self.faq_js.values()[results_arg[0]]
+                    })
+            else:
+
+                doc = filter_nlp(doc)
+                print('Going to intent classification, filtered:', doc)
+
+                nns = [w.text for w in doc if w.tag_ in ['NNP', 'NN', 'JJ', 'PROPN']]
+                sal_phrase = [w.text for w in doc if w.tag_ not in ['NNP', 'NN', 'JJ', 'PROPN']]
+                
+                print('salient phrase for intent', sal_phrase)
+                print('nns for catalogue', nns)
+
+                scores = sorted(classify_intent(sal_phrase), key=lambda x: x[1])
+                print('intent classification:', str(scores))
+
+                if scores[0][1] < 0.2 and scores[0][0] == 'payment':
+                    return json.dumps({
+                        'intent': 'payment'
+                        })
+
+                else:
+                    return rank_items(nns, money_res):
+        else:
+            return rank_items(nns, money_res):
+
+
+            
+                
+
+        
+        # text_mean_emb = self.mean_transform([doc_fil])[0]
         # results_mean = [cosine(text_mean_emb, emb) if np.sum(emb)!=0 else math.inf for emb in self.title_mean]
+    #     results_blue_feat = [bleu_string_distance(lemmas(feat), lemmas(filter_nlp(doc)), (0.3, 0.7)) for feat in self.feat_nlped]
+    #     print("features calculated")
+
+    #     results_blue_title = [bleu_string_distance(lemmas(title), lemmas(filter_nlp_title(doc)), (1,)) for title in self.title_nlped]
+    #     print("blue calculated")
+
+    #     scores = np.mean([results_blue_feat, results_blue_title], axis=0).tolist()
+    #     results_args = np.argsort(scores).tolist()
+
+    #     if 'num1' in money_res:
+    #         log.debug('results before money '+str(len(results_args)))
+    #         results_args = [idx for idx in results_args if price(self.data[idx])>=money_res['num1'] and price(self.data[idx])<=money_res['num2']]
+    #         log.debug('results after money '+str(len(results_args)))
+            
+    #     # fetch_data = [self.data[idx] for idx in results_args[start:stop+1]]
+    #     ret = {
+    #         'results_args': results_args,
+    #         'scores': scores
+    #     }
+    #     return json.dumps(ret)
+        
+    # # def train(self, data):
+    #     print(str(data))
+    #     pass
+
+    # def fit(self, *args, **kwargs):
+    #     super().__init__(**kwargs)  # self.opt initialized in here
+
+    #     print(self.opt.pop('category'))
+    #     # self.tokenizer = self.opt.pop('tokenizer')
+    #     pass
+
+    def rank_items(doc, money_res):
         results_blue_feat = [bleu_string_distance(lemmas(feat), lemmas(filter_nlp(doc)), (0.3, 0.7)) for feat in self.feat_nlped]
         print("features calculated")
 
@@ -90,27 +163,46 @@ class RankingEmbModel(Component):
             
         # fetch_data = [self.data[idx] for idx in results_args[start:stop+1]]
         ret = {
+            'intent': 'catalog',
             'results_args': results_args,
             'scores': scores
         }
         return json.dumps(ret)
         
-    # def train(self, data):
-    #     print(str(data))
-    #     pass
 
-    # def fit(self, *args, **kwargs):
-    #     super().__init__(**kwargs)  # self.opt initialized in here
+    def classify_faq(query_nlped):
+        ques = list(self.faq_js.keys())
+        ans = list(self.faq_js.values())
+    
+        items_meaned = [mean_transform([nlp(text)])[0] for text in ques]
+        query_meaned = mean_transform([query_nlped])[0]
+        results = [cosine(query_meaned, emb) if np.sum(emb)!=0 else math.inf for emb in items_meaned]
 
-    #     print(self.opt.pop('category'))
-    #     # self.tokenizer = self.opt.pop('tokenizer')
-    #     pass
+        return results
+
+    def classify_intent(query_nlped):
+
+        query_meaned = mean_transform([query_nlped])[0]
+        intents_scores = []
+        for intent, sens in self.intents.items():
+            for sen in sens:
+                sen_meaned = mean_transform([nlp(sen)])[0]
+
+                if np.sum(sen_nlped)!=0:
+                    score = cosine(query_meaned, sen_meaned)
+                else:
+                    score = math.inf
+            
+                intents_scores.append((intent, score))
+
+        return [score for score in intents_scores if score[1]>=0]
+
 
     def mean_transform(self, X, debug = False):
         out = []
         for words in X:
             row = []
-            for w in filter_nlp_emb(words):
+            for w in filter_nlp(words):
                 if debug:
                     print(w)
                     print(w.lemma_)
