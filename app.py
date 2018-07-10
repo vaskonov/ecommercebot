@@ -83,16 +83,20 @@ def make_payment(chat_id, username, bot):
     else:
         bot.send_message(chat_id, 'Your card is empty')
 
-def showcart(bot, username)
+def showcart(bot, update):
+    username = update._effective_user.username
+    query = update.message.text
+
     if username in orders:
         for item_id in orders[username][0:-1]:
             bot.send_message(query.message.chat_id, data[item_id]['Title'])
 
         keyboard = [[InlineKeyboardButton("Make payment", callback_data='payment')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        bot.send_message(query.message.chat_id, data[orders[username][-1]]['Title'], reply_markup=reply_markup)
+#        bot.send_message(query.message.chat_id, data[orders[username][-1]]['Title'], reply_markup=reply_markup)
+        update.message.reply_text(data[orders[username][-1]]['Title'], reply_markup=reply_markup)
     else:
-        bot.send_message(query.message.chat_id, 'Your card is empty')
+        update.message.reply_text('Your card is empty')
 
 def button(bot, update):
     query = update.callback_query
@@ -104,7 +108,7 @@ def button(bot, update):
         update.message.reply_text(str(data[query.data]))
 
     if query.data == 'opencard':
-        showcart(bot, username)
+        showcart(bot, update)
         
     if 'below' in query.data:
         zerokeys = ['above', 'between', 'start', 'stop']
@@ -243,15 +247,16 @@ def button(bot, update):
 
 
 
-def showitem(bot, chat_id, results_args, scores):
+def showitem(bot, chat_id, username):
 
-    query = uquery[username]['query']
+    print("showitem")
+    #query = uquery[username]['query']
     start = uquery[username]['start'] if 'start' in uquery[username] else 0
     stop = uquery[username]['stop'] if 'stop' in uquery[username] else 4
     results_args = uquery[username]['results_args']
     scores = uquery[username]['scores']
 
-    logger.warning('Next was pressed "%s"', str(uquery[username]))
+   # logger.warning('Next was pressed "%s"', str(uquery[username]))
     # results_args, scores = search(query)
     # results_args, scores = search(query)
 
@@ -417,13 +422,14 @@ def classify(bot, update):
 
     r = requests.post("http://0.0.0.0:5000/rankingemb_model", json={'context':[[query]]})
     # r = requests.post("http://0.0.0.0:5000/rankingemb_model", json={'context':[query], 'start':start, 'stop':stop})
-    results_args = json.loads(r.json())['results_args']
-    scores = json.loads(r.json())['scores']
     intent = json.loads(r.json())['intent']
-    text = json.loads(r.json())['text']
+    print(json.loads(r.json()))
 
     if intent == 'faq':
-        update.message.reply_text(text, reply_markup=reply_markup)
+        update.message.reply_text(json.loads(r.json())['text'])
+        keyboard = [[InlineKeyboardButton("Show entire FAQ", callback_data='showfaq')]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        update.message.reply_text('Type your question or press a button to show entire FAQ', reply_markup=reply_markup)
         
     if intent == 'payment':
         showcart(bot, update)
@@ -433,11 +439,11 @@ def classify(bot, update):
             del uquery[username]
 
         uquery[username] = {}
-        uquery[username]['query'] = text
+        #uquery[username]['query'] = text
         uquery[username]['start'] = 0
         uquery[username]['stop'] = 4
-        uquery[username]['results_args'] = results_args
-        uquery[username]['scores'] = scores
+        uquery[username]['results_args'] = json.loads(r.json())['results_args']
+        uquery[username]['scores'] = json.loads(r.json())['scores']
         showitem(bot, update.message.chat.id, username)
         return CATALOG
 
@@ -535,7 +541,8 @@ def main():
     # dp.add_handler(CommandHandler("start", start))
     # dp.add_handler(CommandHandler("card", card, pass_args=True))
     dp.add_handler(CallbackQueryHandler(button))
-    dp.add_handler(MessageHandler(Filters.text, main_process))
+    #dp.add_handler(MessageHandler(Filters.text, main_process))
+    dp.add_handler(MessageHandler(Filters.text, classify))
 
     # dp.add_handler(MessageHandler(Filters.text, echo))
 
