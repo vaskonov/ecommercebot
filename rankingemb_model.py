@@ -66,10 +66,12 @@ class RankingEmbModel(Component):
         doc = nlp(text)
         # doc_fil = doc
         #doc_fil = [w for w in doc if w.tag_ in ['NNP', 'NN', 'JJ', 'PROPN']]
+        print('doc before money:', doc)
+        print(str([w.tag_  for w in doc]))
         
         doc, money_res = find_money(doc)
-        print('doc:', doc)
-        print(str([w.tag_  for w in doc]))
+        
+        print('doc after money:', doc)
         # print('filter_nlp:', filter_nlp(doc))
         
         if 'num1' not in money_res:
@@ -94,6 +96,9 @@ class RankingEmbModel(Component):
                 nns = [w for w in doc if w.tag_ in ['NNP', 'NN', 'JJ', 'PROPN']]
                 sal_phrase = [w for w in doc if w.tag_ not in ['NNP', 'NN', 'JJ', 'PROPN']]
                 
+                if len(sal_phrase) == 0:
+                    return self.rank_items(nns, money_res)
+
                 print('salient phrase for intent', sal_phrase)
                 print('nns for catalogue', nns)
 
