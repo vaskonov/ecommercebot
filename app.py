@@ -52,8 +52,8 @@ def start(bot, update):
 
     # update.message.reply_text('Hi '+update._effective_user.first_name+'.Please choose one of the action. Or type your request in plain text.', reply_markup=reply_markup)
     
-    update.message.reply_text('Hi '+update._effective_user.first_name, reply_markup=telegram.ReplyKeyboardRemove())
-    update.message.reply_text('Please choose one of the action. Or type your request in plain text.', reply_markup=reply_markup)
+    update.message.reply_text('Hey '+update._effective_user.first_name, reply_markup=telegram.ReplyKeyboardRemove())
+    update.message.reply_text('I am new e-commerce bot. I will help you to find products that you are looking for. Please choose one of the action. Or type your request in plain text.', reply_markup=reply_markup)
     return MAIN
 
 #def start(bot, update):
@@ -83,6 +83,17 @@ def make_payment(chat_id, username, bot):
     else:
         bot.send_message(chat_id, 'Your card is empty')
 
+def showcart(bot, username)
+    if username in orders:
+        for item_id in orders[username][0:-1]:
+            bot.send_message(query.message.chat_id, data[item_id]['Title'])
+
+        keyboard = [[InlineKeyboardButton("Make payment", callback_data='payment')]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        bot.send_message(query.message.chat_id, data[orders[username][-1]]['Title'], reply_markup=reply_markup)
+    else:
+        bot.send_message(query.message.chat_id, 'Your card is empty')
+
 def button(bot, update):
     query = update.callback_query
     username = query.message.chat.username
@@ -93,16 +104,8 @@ def button(bot, update):
         update.message.reply_text(str(data[query.data]))
 
     if query.data == 'opencard':
-        if username in orders:
-            for item_id in orders[username][0:-1]:
-                bot.send_message(query.message.chat_id, data[item_id]['Title'])
-
-            keyboard = [[InlineKeyboardButton("Make payment", callback_data='payment')]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            bot.send_message(query.message.chat_id, data[orders[username][-1]]['Title'], reply_markup=reply_markup)
-        else:
-            bot.send_message(query.message.chat_id, 'Your card is empty')
-
+        showcart(bot, username)
+        
     if 'below' in query.data:
         zerokeys = ['above', 'between', 'start', 'stop']
         uquery[username] = {k: v for k,v in uquery[username].items() if k not in zerokeys}
@@ -238,20 +241,19 @@ def button(bot, update):
    #   update.message.reply_text('Please type your question.')
       bot.edit_message_text(text="Please type your question.", chat_id=query.message.chat_id, message_id=query.message.message_id)
 
-def showitem(bot, chat_id, username):
+
+
+def showitem(bot, chat_id, results_args, scores):
 
     query = uquery[username]['query']
     start = uquery[username]['start'] if 'start' in uquery[username] else 0
     stop = uquery[username]['stop'] if 'stop' in uquery[username] else 4
-    
+    results_args = uquery[username]['results_args']
+    scores = uquery[username]['scores']
+
     logger.warning('Next was pressed "%s"', str(uquery[username]))
     # results_args, scores = search(query)
     # results_args, scores = search(query)
-
-    r = requests.post("http://0.0.0.0:5000/rankingemb_model", json={'context':[[query]]})
-    # r = requests.post("http://0.0.0.0:5000/rankingemb_model", json={'context':[query], 'start':start, 'stop':stop})
-    results_args = json.loads(r.json())['results_args']
-    scores = json.loads(r.json())['scores']
 
     step = 1
     last_item_id = results_args[stop]
@@ -260,168 +262,184 @@ def showitem(bot, chat_id, username):
         step = -1
         last_item_id = results_args[start]
 
-    keyboard = []
-    keyboard.append([])
+        keyboard = []
+        keyboard.append([])
 
-    for idx in results_args[start:stop:step]:
-        logger.warning('Result "%s" with score "%s"', str(data[idx]['Title']), str(scores[idx]))
-        # update.message.reply_text(str(docs[idx].text))
-        act = [[]]
-        act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(idx)))
-        act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(idx)))
+        for idx in results_args[start:stop:step]:
+            logger.warning('Result "%s" with score "%s"', str(data[idx]['Title']), str(scores[idx]))
+            # update.message.reply_text(str(docs[idx].text))
+            act = [[]]
+            act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(idx)))
+            act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(idx)))
+            reply_markup = InlineKeyboardMarkup(act)
+
+            title = data[idx]['Title']
+
+            if 'ListPrice' in data[idx]:
+                title += " - " + data[idx]['ListPrice'].split('$')[1] + "$"
+
+            bot.send_message(chat_id, title, reply_markup=reply_markup)
+        
+            # keyboard.append([InlineKeyboardButton(docs[idx].text, callback_data=idx)])
+
+        act = [[],[]]
+        act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(last_item_id)))
+        act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(last_item_id)))
+
+        if int(start) > 0:
+            act[1].append(InlineKeyboardButton('Previous', callback_data='previous'))
+
+        act[1].append(InlineKeyboardButton('Next', callback_data='next'))
+
         reply_markup = InlineKeyboardMarkup(act)
 
-        title = data[idx]['Title']
+        titlel = data[last_item_id]['Title']
 
-        if 'ListPrice' in data[idx]:
-            title += " - " + data[idx]['ListPrice'].split('$')[1] + "$"
+        if 'ListPrice' in data[last_item_id]:
+            titlel += " - " + data[last_item_id]['ListPrice'].split('$')[1] + "$"
 
-        bot.send_message(chat_id, title, reply_markup=reply_markup)
-    
-        # keyboard.append([InlineKeyboardButton(docs[idx].text, callback_data=idx)])
-
-    act = [[],[]]
-    act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(last_item_id)))
-    act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(last_item_id)))
-
-    if int(start) > 0:
-        act[1].append(InlineKeyboardButton('Previous', callback_data='previous'))
-
-    act[1].append(InlineKeyboardButton('Next', callback_data='next'))
-
-    reply_markup = InlineKeyboardMarkup(act)
-
-    titlel = data[last_item_id]['Title']
-
-    if 'ListPrice' in data[last_item_id]:
-        titlel += " - " + data[last_item_id]['ListPrice'].split('$')[1] + "$"
-
-    bot.send_message(chat_id, titlel, reply_markup=reply_markup)
+        bot.send_message(chat_id, titlel, reply_markup=reply_markup)
 
 def help(bot, update):
-    update.message.reply_text('Please type the product query')
+    update.message.reply_text('Please type your request in plain text')
 
-def classify_intent(query, intents):
+# def classify_intent(query, intents):
 
-    query_nlped = emb_mean.transform([nlp(query)])[0]
-    intents_scores = []
-    for intent, sens in intents.items():
-        for sen in sens:
-            sen_nlped = emb_mean.transform([nlp(sen)])[0]
+#     query_nlped = emb_mean.transform([nlp(query)])[0]
+#     intents_scores = []
+#     for intent, sens in intents.items():
+#         for sen in sens:
+#             sen_nlped = emb_mean.transform([nlp(sen)])[0]
 
-            if np.sum(sen_nlped)!=0:
-                score = cosine(query_nlped, sen_nlped)
-            else:
-                score = math.inf
+#             if np.sum(sen_nlped)!=0:
+#                 score = cosine(query_nlped, sen_nlped)
+#             else:
+#                 score = math.inf
         
-            print(query, sen, score)
+#             print(query, sen, score)
    
-            intents_scores.append((intent, score))
+#             intents_scores.append((intent, score))
 
-    return [score for score in intents_scores if score[1]>=0]
+#     return [score for score in intents_scores if score[1]>=0]
 
-def classify(query, items):
-    items_nlped = [emb_mean.transform([nlp(text)])[0] for text in items]
-    query_nlped = emb_mean.transform([nlp(query)])[0]
-    results = [cosine(query_nlped, emb) if np.sum(emb)!=0 else math.inf for emb in items_nlped]
-    return results
+# def classify(query, items):
+#     items_nlped = [emb_mean.transform([nlp(text)])[0] for text in items]
+#     query_nlped = emb_mean.transform([nlp(query)])[0]
+#     results = [cosine(query_nlped, emb) if np.sum(emb)!=0 else math.inf for emb in items_nlped]
+#     return results
 
-def search(text):
-    text_mean_emb = emb_mean.transform([nlp(text)])[0]
- #   text_tfidf_emb = emb_tfidf.transform([nlp(text)])[0]
+# def search(text):
+#     text_mean_emb = emb_mean.transform([nlp(text)])[0]
+#  #   text_tfidf_emb = emb_tfidf.transform([nlp(text)])[0]
 
-    # bot.send_chat_action(chat_id=update.message.chat_id, action=telegram.ChatAction.TYPING)
-    # bot.send_chat_action(chat_id=update.message.chat_id, action=telegram.ChatAction.TYPING)
+#     # bot.send_chat_action(chat_id=update.message.chat_id, action=telegram.ChatAction.TYPING)
+#     # bot.send_chat_action(chat_id=update.message.chat_id, action=telegram.ChatAction.TYPING)
 
-    results_mean = [cosine(text_mean_emb, emb) if np.sum(emb)!=0 else math.inf for emb in data_mean]
-#    results_tfidf = [cosine(text_tfidf_emb, emb) if np.sum(emb)!=0 else math.inf for emb in data_tfidf]
-        #results = np.mean([results_mean,results_tfidf], axis=0)
+#     results_mean = [cosine(text_mean_emb, emb) if np.sum(emb)!=0 else math.inf for emb in data_mean]
+# #    results_tfidf = [cosine(text_tfidf_emb, emb) if np.sum(emb)!=0 else math.inf for emb in data_tfidf]
+#         #results = np.mean([results_mean,results_tfidf], axis=0)
 
-    scores = np.mean([results_mean], axis=0)
-    # results_cos = sorted(results_cos,key=lambda x: x[1])
-    results_args = np.argsort(scores)
-    return results_args, scores
+#     scores = np.mean([results_mean], axis=0)
+#     # results_cos = sorted(results_cos,key=lambda x: x[1])
+#     results_args = np.argsort(scores)
+#     return results_args, scores
 
-def faq_process(bot, update):
-    query = update.message.text
-    logger.warning('FAQ query "%s"', query)
+# def faq_process(bot, update):
+#     query = update.message.text
+#     logger.warning('FAQ query "%s"', query)
 
-    ques = list(faq_js.keys())
-    ans = list(faq_js.values())
+#     ques = list(faq_js.keys())
+#     ans = list(faq_js.values())
 
-    results = classify(query, ques)
+#     results = classify(query, ques)
     
-    results_arg = np.argsort(results)
+#     results_arg = np.argsort(results)
     
-    logger.warning('Results "%s" with threshold "%s"', str(ques[results_arg[0]]), str(results[results_arg[0]]))
+#     logger.warning('Results "%s" with threshold "%s"', str(ques[results_arg[0]]), str(results[results_arg[0]]))
 
-    if results[results_arg[0]] < 0.2:
-        update.message.reply_text(ans[results_arg[0]])
-        # bot.edit_message_text(text=ques[results_arg[0]], chat_id=query.message.chat_id, message_id=query.message.message_id)
-    else:
-        update.message.reply_text('Please rephrase your question')
-        # bot.edit_message_text(text='Please rephrase your question', chat_id=query.message.chat_id, message_id=query.message.message_id)
+#     if results[results_arg[0]] < 0.2:
+#         update.message.reply_text(ans[results_arg[0]])
+#         # bot.edit_message_text(text=ques[results_arg[0]], chat_id=query.message.chat_id, message_id=query.message.message_id)
+#     else:
+#         update.message.reply_text('Please rephrase your question')
+#         # bot.edit_message_text(text='Please rephrase your question', chat_id=query.message.chat_id, message_id=query.message.message_id)
 
 
-def main_process(bot, update):
+# def main_process(bot, update):
 
-    catalogue_process(bot, update)
-    return True
+#     catalogue_process(bot, update)
+#     return True
 
-    query = update.message.text
-    logger.warning('MAIN process "%s"', query)
+#     query = update.message.text
+#     logger.warning('MAIN process "%s"', query)
 
-    intents = {
-        'catalog': ['I am looking for', 'I want to buy', 'I need', 'I search'],
-        'payment': ['I want to pay', 'I need to pay for my order', 'please receive a payment']
-    }
+#     intents = {
+#         'catalog': ['I am looking for', 'I want to buy', 'I need', 'I search', 'do you have'],
+#         'payment': ['I want to pay', 'I need to pay for my order', 'please receive a payment']
+#     }
 
-    ques = list(faq_js.keys())
-    ans = list(faq_js.values())
+#     ques = list(faq_js.keys())
+#     ans = list(faq_js.values())
 
-    results = classify(query, ques)
+#     results = classify(query, ques)
     
-    results_arg = np.argsort(results)
+#     results_arg = np.argsort(results)
     
-    logger.warning('Results "%s" with threshold "%s"', str(ques[results_arg[0]]), str(results[results_arg[0]]))
+#     logger.warning('Results "%s" with threshold "%s"', str(ques[results_arg[0]]), str(results[results_arg[0]]))
 
-    if results[results_arg[0]] < 0.2:
-        update.message.reply_text(ans[results_arg[0]])
-        # bot.edit_message_text(text=ques[results_arg[0]], chat_id=query.message.chat_id, message_id=query.message.message_id)
-    else:
-        logger.warning('This is not a question from FAQ')
-        doc = filter_nlp(nlp(query))
-        for w in doc:
-          print(w, w.tag_)
-        nns = [w.text for w in doc if w.tag_ in ['NNP', 'NN', 'JJ']]
-        sal_phrase = [w.text for w in doc if w.tag_ not in ['NNP', 'NN', 'JJ']]
-        logger.warning('parsing: salient phrase: "%s" nns: "%s"', sal_phrase, nns)
+#     if results[results_arg[0]] < 0.2:
+#         update.message.reply_text(ans[results_arg[0]])
+#         # bot.edit_message_text(text=ques[results_arg[0]], chat_id=query.message.chat_id, message_id=query.message.message_id)
+#     else:
+#         logger.warning('This is not a question from FAQ')
+#         doc = filter_nlp(nlp(query))
+#         for w in doc:
+#           print(w, w.tag_)
+#         nns = [w.text for w in doc if w.tag_ in ['NNP', 'NN', 'JJ']]
+#         sal_phrase = [w.text for w in doc if w.tag_ not in ['NNP', 'NN', 'JJ']]
+#         logger.warning('parsing: salient phrase: "%s" nns: "%s"', sal_phrase, nns)
 
-        scores = sorted(classify_intent(" ".join(sal_phrase), intents), key=lambda x: x[1])
-        print(scores)
+#         scores = sorted(classify_intent(" ".join(sal_phrase), intents), key=lambda x: x[1])
+#         print(scores)
 
-        if scores[0][1] < 0.2:
-            if scores[0][0] == 'catalog':
-                update.message.text = " ".join(nns)
-                catalogue_process(bot, update)
-            if scores[0][0] == 'payment':
-                make_payment(update.message.chat.id, update.message.chat.username, bot)
-        else:
-            update.message.reply_text('Please rephrase your request')
+#         if scores[0][1] < 0.2:
+#             if scores[0][0] == 'catalog':
+#                 update.message.text = " ".join(nns)
+#                 catalogue_process(bot, update)
+#             if scores[0][0] == 'payment':
+#                 make_payment(update.message.chat.id, update.message.chat.username, bot)
+#         else:
+#             update.message.reply_text('Please rephrase your request')
 
-def catalogue_process(bot, update):
+def classify(bot, update):
     username = update._effective_user.username
-    text = update.message.text
+    query = update.message.text
 
-    if username in uquery:
-        del uquery[username]
+    r = requests.post("http://0.0.0.0:5000/rankingemb_model", json={'context':[[query]]})
+    # r = requests.post("http://0.0.0.0:5000/rankingemb_model", json={'context':[query], 'start':start, 'stop':stop})
+    results_args = json.loads(r.json())['results_args']
+    scores = json.loads(r.json())['scores']
+    intent = json.loads(r.json())['intent']
+    text = json.loads(r.json())['text']
 
-    uquery[username] = {}
-    uquery[username]['query'] = text
-    uquery[username]['start'] = 0
-    uquery[username]['stop'] = 4
-    showitem(bot, update.message.chat.id, username)
-    return CATALOG
+    if intent == 'faq':
+        update.message.reply_text(text, reply_markup=reply_markup)
+        
+    if intent == 'payment':
+        showcart(bot, update)
+
+    if intent == 'catalog':
+        if username in uquery:
+            del uquery[username]
+
+        uquery[username] = {}
+        uquery[username]['query'] = text
+        uquery[username]['start'] = 0
+        uquery[username]['stop'] = 4
+        uquery[username]['results_args'] = results_args
+        uquery[username]['scores'] = scores
+        showitem(bot, update.message.chat.id, username)
+        return CATALOG
 
     # text = update.message.text
     
@@ -502,9 +520,9 @@ def main():
         entry_points=[
                         CommandHandler('start', start)],
         states = {
-            MAIN: [CallbackQueryHandler(button), MessageHandler(Filters.text, main_process)],
-            FAQ: [MessageHandler(Filters.text, faq_process),],
-            CATALOG: [MessageHandler(Filters.text, catalogue_process),]
+            MAIN: [CallbackQueryHandler(button), MessageHandler(Filters.text, classify)],#main_process
+            FAQ: [CallbackQueryHandler(button), MessageHandler(Filters.text, classify),],#[MessageHandler(Filters.text, faq_process),],
+            CATALOG: [CallbackQueryHandler(button), MessageHandler(Filters.text, classify),], #[MessageHandler(Filters.text, catalogue_process),]
             # ORDERS: [MessageHandler(Filters.text, catalogue_process),]
         },
         fallbacks=[CommandHandler('start', start),],
