@@ -95,12 +95,13 @@ class RankingEmbModel(Component):
 
                 nns = [w for w in doc if w.tag_ in ['NNP', 'NN', 'JJ', 'PROPN']]
                 sal_phrase = [w for w in doc if w.tag_ not in ['NNP', 'NN', 'JJ', 'PROPN']]
-                
-                if len(sal_phrase) == 0:
-                    return self.rank_items(nns, money_res)
 
                 print('salient phrase for intent', sal_phrase)
                 print('nns for catalogue', nns)
+
+                if len(sal_phrase) == 0:
+                    print("salient is empty, go to rank")
+                    return self.rank_items(nns, money_res)
 
                 scores = sorted(self.classify_intent(sal_phrase), key=lambda x: x[1])
                 print('intent classification:', str(scores))
@@ -115,7 +116,8 @@ class RankingEmbModel(Component):
                 else:
                     return self.rank_items(nns, money_res)
         else:
-            return self.rank_items(doc, money_res)
+            nns = [w for w in doc if w.tag_ in ['NNP', 'NN', 'JJ', 'PROPN']]
+            return self.rank_items(nns, money_res)
 
 
             
