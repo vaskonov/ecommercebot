@@ -1,0 +1,4 @@
+{
+  "catalog": ["I am looking for", "I want to buy", "I need", "I search", "do you have"],
+  "payment": ["I want to pay", "I need to pay for my order","please receive a payment", "show cart"]
+}
