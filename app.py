@@ -152,8 +152,7 @@ def button(bot, update):
                 else:
                     txt += '<b>' + cat + '</b>' + ':' + data[int(parts[1])][cat] + "\n"
                     
-        act = []
-        act.append(InlineKeyboardButton('Add to card',callback_data='tocard:'+parts[1]))
+        act = [[InlineKeyboardButton('Add to card',callback_data='tocard:'+parts[1])]]
         reply_markup = InlineKeyboardMarkup(act)
 
         bot.send_message(query.message.chat_id, txt, reply_markup=reply_markup, parse_mode=telegram.ParseMode.HTML)
@@ -261,6 +260,10 @@ def showitem(bot, chat_id, username):
     stop = uquery[username]['stop'] if 'stop' in uquery[username] else 4
     results_args = uquery[username]['results_args']
     scores = uquery[username]['scores']
+
+    if len(scores) == 0:
+        bot.send_message(chat_id, "The search is empty. Please change your query.")
+        return
 
    # logger.warning('Next was pressed "%s"', str(uquery[username]))
     # results_args, scores = search(query)
