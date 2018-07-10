@@ -267,43 +267,43 @@ def showitem(bot, chat_id, username):
         step = -1
         last_item_id = results_args[start]
 
-        keyboard = []
-        keyboard.append([])
+    keyboard = []
+    keyboard.append([])
 
-        for idx in results_args[start:stop:step]:
-            logger.warning('Result "%s" with score "%s"', str(data[idx]['Title']), str(scores[idx]))
-            # update.message.reply_text(str(docs[idx].text))
-            act = [[]]
-            act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(idx)))
-            act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(idx)))
-            reply_markup = InlineKeyboardMarkup(act)
-
-            title = data[idx]['Title']
-
-            if 'ListPrice' in data[idx]:
-                title += " - " + data[idx]['ListPrice'].split('$')[1] + "$"
-
-            bot.send_message(chat_id, title, reply_markup=reply_markup)
-        
-            # keyboard.append([InlineKeyboardButton(docs[idx].text, callback_data=idx)])
-
-        act = [[],[]]
-        act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(last_item_id)))
-        act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(last_item_id)))
-
-        if int(start) > 0:
-            act[1].append(InlineKeyboardButton('Previous', callback_data='previous'))
-
-        act[1].append(InlineKeyboardButton('Next', callback_data='next'))
-
+    for idx in results_args[start:stop:step]:
+        logger.warning('Result "%s" with score "%s"', str(data[idx]['Title']), str(scores[idx]))
+        # update.message.reply_text(str(docs[idx].text))
+        act = [[]]
+        act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(idx)))
+        act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(idx)))
         reply_markup = InlineKeyboardMarkup(act)
 
-        titlel = data[last_item_id]['Title']
+        title = data[idx]['Title']
 
-        if 'ListPrice' in data[last_item_id]:
-            titlel += " - " + data[last_item_id]['ListPrice'].split('$')[1] + "$"
+        if 'ListPrice' in data[idx]:
+            title += " - " + data[idx]['ListPrice'].split('$')[1] + "$"
 
-        bot.send_message(chat_id, titlel, reply_markup=reply_markup)
+        bot.send_message(chat_id, title, reply_markup=reply_markup)
+    
+        # keyboard.append([InlineKeyboardButton(docs[idx].text, callback_data=idx)])
+
+    act = [[],[]]
+    act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(last_item_id)))
+    act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(last_item_id)))
+
+    if int(start) > 0:
+        act[1].append(InlineKeyboardButton('Previous', callback_data='previous'))
+
+    act[1].append(InlineKeyboardButton('Next', callback_data='next'))
+
+    reply_markup = InlineKeyboardMarkup(act)
+
+    titlel = data[last_item_id]['Title']
+
+    if 'ListPrice' in data[last_item_id]:
+        titlel += " - " + data[last_item_id]['ListPrice'].split('$')[1] + "$"
+
+    bot.send_message(chat_id, titlel, reply_markup=reply_markup)
 
 def help(bot, update):
     update.message.reply_text('Please type your request in plain text')
