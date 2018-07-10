@@ -168,6 +168,11 @@ class RankingEmbModel(Component):
         scores = np.mean([results_blue_feat, results_blue_title], axis=0).tolist()
         results_args = np.argsort(scores).tolist()
 
+        print('minimal score:', np.min(scores))
+        print('10th score:', scores[results_args[10]])
+        print('20th score:', scores[results_args[20]])
+        print('30th score:', scores[results_args[30]])
+
         if 'num1' in money_res:
             log.debug('results before money '+str(len(results_args)))
             results_args = [idx for idx in results_args if price(self.data[idx])>=money_res['num1'] and price(self.data[idx])<=money_res['num2']]
