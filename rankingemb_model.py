@@ -32,6 +32,8 @@ class RankingEmbModel(Component):
         self.glove_model = kwargs['embedder']
         self.dim = int(kwargs['dim'])
 
+        print(self.glove_model([['home']]))
+
         with open('/tmp/phones.pickle', 'rb') as handle:
             log.debug('Data set is loading')
             self.data = pickle.load(handle)
@@ -46,10 +48,10 @@ class RankingEmbModel(Component):
         self.title_mean = self.mean_transform(self.title_nlped)
         log.debug('everything is transformed')
 
-        with open('../faq.json', 'r') as f:
+        with open('./faq.json', 'r') as f:
             self.faq_js = json.load(f)
 
-        with open('../intents.json', 'r') as f:
+        with open('./intents.json', 'r') as f:
             self.intents = json.load(f)
 
     @overrides
@@ -66,46 +68,49 @@ class RankingEmbModel(Component):
         #doc_fil = [w for w in doc if w.tag_ in ['NNP', 'NN', 'JJ', 'PROPN']]
         
         doc, money_res = find_money(doc)
-        print('unfiltered_nlp:', doc)
-        print('filter_nlp:', filter_nlp(doc))
+        print('doc:', doc)
+        print(str([w.tag_  for w in doc]))
+        # print('filter_nlp:', filter_nlp(doc))
         
         if 'num1' not in money_res:
-            results = classify_faq(doc)
+            results = self.classify_faq(doc)
 
             results_arg = np.argsort(results)
-            print('Results for faq "%s"', str(results_arg))
+            print('Results for faq: ', str(results_arg), str(results))
 
             if results[results_arg[0]] < 0.2:
 
-                print('FAQ question is detected with answer', self.faq_js.values()[results_arg[0]])
+                print('FAQ question is detected with answer', list(self.faq_js.values())[results_arg[0]])
 
                 return json.dumps({
                     'intent': 'faq',
-                    'text': self.faq_js.values()[results_arg[0]]
+                    'text': list(self.faq_js.values())[results_arg[0]]
                     })
             else:
 
-                doc = filter_nlp(doc)
+                # doc = filter_nlp(doc)
                 print('Going to intent classification, filtered:', doc)
 
-                nns = [w.text for w in doc if w.tag_ in ['NNP', 'NN', 'JJ', 'PROPN']]
-                sal_phrase = [w.text for w in doc if w.tag_ not in ['NNP', 'NN', 'JJ', 'PROPN']]
+                nns = [w for w in doc if w.tag_ in ['NNP', 'NN', 'JJ', 'PROPN']]
+                sal_phrase = [w for w in doc if w.tag_ not in ['NNP', 'NN', 'JJ', 'PROPN']]
                 
                 print('salient phrase for intent', sal_phrase)
                 print('nns for catalogue', nns)
 
-                scores = sorted(classify_intent(sal_phrase), key=lambda x: x[1])
+                scores = sorted(self.classify_intent(sal_phrase), key=lambda x: x[1])
                 print('intent classification:', str(scores))
 
                 if scores[0][1] < 0.2 and scores[0][0] == 'payment':
+
+                    print('payment detected')
                     return json.dumps({
                         'intent': 'payment'
                         })
 
                 else:
-                    return rank_items(nns, money_res):
+                    return self.rank_items(nns, money_res)
         else:
-            return rank_items(nns, money_res):
+            return self.rank_items(doc, money_res)
 
 
             
@@ -146,7 +151,7 @@ class RankingEmbModel(Component):
     #     # self.tokenizer = self.opt.pop('tokenizer')
     #     pass
 
-    def rank_items(doc, money_res):
+    def rank_items(self, doc, money_res):
         results_blue_feat = [bleu_string_distance(lemmas(feat), lemmas(filter_nlp(doc)), (0.3, 0.7)) for feat in self.feat_nlped]
         print("features calculated")
 
@@ -167,28 +172,30 @@ class RankingEmbModel(Component):
             'results_args': results_args,
             'scores': scores
         }
+
+        print(self.data[results_args[0]])
         return json.dumps(ret)
         
 
-    def classify_faq(query_nlped):
+    def classify_faq(self, query_nlped):
         ques = list(self.faq_js.keys())
         ans = list(self.faq_js.values())
     
-        items_meaned = [mean_transform([nlp(text)])[0] for text in ques]
-        query_meaned = mean_transform([query_nlped])[0]
+        items_meaned = [self.mean_transform([nlp(text)])[0] for text in ques]
+        query_meaned = self.mean_transform([query_nlped])[0]
         results = [cosine(query_meaned, emb) if np.sum(emb)!=0 else math.inf for emb in items_meaned]
 
         return results
 
-    def classify_intent(query_nlped):
+    def classify_intent(self, query_nlped):
 
-        query_meaned = mean_transform([query_nlped])[0]
+        query_meaned = self.mean_transform([query_nlped])[0]
         intents_scores = []
         for intent, sens in self.intents.items():
             for sen in sens:
-                sen_meaned = mean_transform([nlp(sen)])[0]
+                sen_meaned = self.mean_transform([nlp(sen)])[0]
 
-                if np.sum(sen_nlped)!=0:
+                if np.sum(sen_meaned)!=0:
                     score = cosine(query_meaned, sen_meaned)
                 else:
                     score = math.inf
@@ -209,7 +216,12 @@ class RankingEmbModel(Component):
                     print(w.vector)
                     print(len(w.vector))
         
-                row.append(self.glove_model([[w.lemma_]]))
+                vec = self.glove_model([[w.lemma_]])
+                
+                if np.sum(vec)==0:
+                    print('mean_transform:', w.lemma_, ':was not found')
+
+                row.append(vec)
             if len(row)!=0:
                 row_mean = np.mean(row, axis=0)
             else:
@@ -303,7 +315,7 @@ def filter_nlp(tokens):
     res = []
     for word in tokens:
 # WRB WDT WP
-        if word.tag_ not in ['MD', 'SP', 'DT', 'PRP', 'TO'] and word.is_stop == False and word.is_punct == False: #VBP VBZ
+        if word.tag_ not in ['MD', 'SP', 'DT', 'TO']:# and word.is_stop == False and word.is_punct == False: #VBP VBZ
             res.append(word)
     return res
 
