@@ -151,7 +151,12 @@ def button(bot, update):
                     txt += '<b>' + cat + '</b>' + ':$' + data[int(parts[1])][cat].split('$')[1] + "\n"
                 else:
                     txt += '<b>' + cat + '</b>' + ':' + data[int(parts[1])][cat] + "\n"
-        bot.send_message(query.message.chat_id, txt, parse_mode=telegram.ParseMode.HTML)
+                    
+        act = []
+        act.append(InlineKeyboardButton('Add to card',callback_data='tocard:'+parts[1]))
+        reply_markup = InlineKeyboardMarkup(act)
+
+        bot.send_message(query.message.chat_id, txt, reply_markup=reply_markup, parse_mode=telegram.ParseMode.HTML)
 
     if 'answer' in query.data:
         parts = query.data.split(":")
@@ -282,9 +287,9 @@ def showitem(bot, chat_id, username):
         title = data[idx]['Title']
 
         if 'ListPrice' in data[idx]:
-            title += " - " + data[idx]['ListPrice'].split('$')[1] + "$"
+            title += " - <b>" + data[idx]['ListPrice'].split('$')[1] + "$</b>"
 
-        bot.send_message(chat_id, title, reply_markup=reply_markup)
+        bot.send_message(chat_id, title, reply_markup=reply_markup, parse_mode=telegram.ParseMode.HTML)
     
         # keyboard.append([InlineKeyboardButton(docs[idx].text, callback_data=idx)])
 
@@ -302,9 +307,9 @@ def showitem(bot, chat_id, username):
     titlel = data[last_item_id]['Title']
 
     if 'ListPrice' in data[last_item_id]:
-        titlel += " - " + data[last_item_id]['ListPrice'].split('$')[1] + "$"
+        titlel += " - <b>" + data[last_item_id]['ListPrice'].split('$')[1] + "$</b>"
 
-    bot.send_message(chat_id, titlel, reply_markup=reply_markup)
+    bot.send_message(chat_id, titlel, reply_markup=reply_markup, parse_mode=telegram.ParseMode.HTML)
 
 def help(bot, update):
     update.message.reply_text('Please type your request in plain text')
