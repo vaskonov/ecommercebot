@@ -83,9 +83,9 @@ def make_payment(chat_id, username, bot):
     else:
         bot.send_message(chat_id, 'Your card is empty')
 
-def showcart(bot, update):
-    username = update._effective_user.username
-    query = update.message.text
+def showcart(bot, chat_id, username):
+#    username = update._effective_user.username
+#    query = update.message.text
 
     if username in orders:
         for item_id in orders[username][0:-1]:
@@ -93,10 +93,11 @@ def showcart(bot, update):
 
         keyboard = [[InlineKeyboardButton("Make payment", callback_data='payment')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-#        bot.send_message(query.message.chat_id, data[orders[username][-1]]['Title'], reply_markup=reply_markup)
-        update.message.reply_text(data[orders[username][-1]]['Title'], reply_markup=reply_markup)
+        bot.send_message(chat_id, data[orders[username][-1]]['Title'], reply_markup=reply_markup)
+#        update.message.reply_text(data[orders[username][-1]]['Title'], reply_markup=reply_markup)
     else:
-        update.message.reply_text('Your card is empty')
+        bot.send_message(chat_id, 'Your card is empty')
+ #       update.message.reply_text('Your card is empty')
 
 def button(bot, update):
     query = update.callback_query
@@ -108,7 +109,7 @@ def button(bot, update):
         update.message.reply_text(str(data[query.data]))
 
     if query.data == 'opencard':
-        showcart(bot, update)
+        showcart(bot, query.message.chat_id, username)
         
     if 'below' in query.data:
         zerokeys = ['above', 'between', 'start', 'stop']
@@ -432,7 +433,7 @@ def classify(bot, update):
         update.message.reply_text('Type your question or press a button to show entire FAQ', reply_markup=reply_markup)
         
     if intent == 'payment':
-        showcart(bot, update)
+        showcart(bot, update.message.chat.id, username)
 
     if intent == 'catalog':
         if username in uquery:
