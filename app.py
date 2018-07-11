@@ -451,8 +451,14 @@ def classify(bot, update):
         #uquery[username]['query'] = text
         uquery[username]['start'] = 0
         uquery[username]['stop'] = 4
-        uquery[username]['results_args'] = json.loads(r.json())['results_args']
         uquery[username]['scores'] = json.loads(r.json())['scores']
+        
+        raw_scores = [(score, len(data[idx]['Title'])) for idx, score in enumerate(uquery[username]['scores'])]
+        raw_scores_ar = np.array(raw_scores, dtype=[('x', '<i4'), ('y', '<i4')])
+        uquery[username]['results_args'] = np.argsort(raw_scores_ar, order=('x','y'))
+
+        # uquery[username]['results_args'] = json.loads(r.json())['results_args']
+        
         showitem(bot, update.message.chat.id, username)
         return CATALOG
 
