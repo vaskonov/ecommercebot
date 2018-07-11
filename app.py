@@ -446,6 +446,10 @@ def classify(bot, update):
         showcart(bot, update.message.chat.id, username)
 
     if intent == 'catalog':
+        
+        with open('/tmp/phones.pickle', 'rb') as handle:
+            data = pickle.load(handle)
+    
         if username in uquery:
             del uquery[username]
 
