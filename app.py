@@ -279,7 +279,7 @@ def showitem(bot, chat_id, username):
     keyboard = []
     keyboard.append([])
 
-    for idx, elem in enumerate(data[start:stop:step]):
+    for idx in results_args[start:stop:step]:
         logger.warning('Result "%s" with score "%s"', str(data[idx]['Title']), str(scores[idx]))
         # update.message.reply_text(str(docs[idx].text))
         act = [[]]
@@ -453,11 +453,6 @@ def classify(bot, update):
         uquery[username]['stop'] = 4
         uquery[username]['results_args'] = json.loads(r.json())['results_args']
         uquery[username]['scores'] = json.loads(r.json())['scores']
-
-        for idx, elem in enumerate(data):
-            data[idx]['score'] = uquery[username]['scores'][idx]
-
-        data = sorted(data, key=lambda k: (k['score'], len(k['Title'])))
         showitem(bot, update.message.chat.id, username)
         return CATALOG
 
