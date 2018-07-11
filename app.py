@@ -88,18 +88,19 @@ def showcart(bot, chat_id, username):
 #    query = update.message.text
 
     if username in orders:
-        for item_id in orders[username][0:-1]:
-            bot.send_message(query.message.chat_id, data[item_id]['Title'])
+        for item in orders[username][0:-1]:
+            bot.send_message(query.message.chat_id, item['Title'])
 
         keyboard = [[InlineKeyboardButton("Make payment", callback_data='payment')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        bot.send_message(chat_id, data[orders[username][-1]]['Title'], reply_markup=reply_markup)
+        bot.send_message(chat_id, orders[username][-1]['Title'], reply_markup=reply_markup)
 #        update.message.reply_text(data[orders[username][-1]]['Title'], reply_markup=reply_markup)
     else:
         bot.send_message(chat_id, 'Your card is empty')
  #       update.message.reply_text('Your card is empty')
 
 def button(bot, update):
+    global data
     query = update.callback_query
     username = query.message.chat.username
 
@@ -136,7 +137,7 @@ def button(bot, update):
         if username not in orders:
             orders[username] = []
 
-        orders[username].append(int(parts[1]))
+        orders[username].append(data[int(parts[1])])
         keyboard = [[InlineKeyboardButton("Open card", callback_data='opencard')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         bot.send_message(query.message.chat_id, 'The item was added to card.', reply_markup=reply_markup)
@@ -253,7 +254,7 @@ def button(bot, update):
 
 
 def showitem(bot, chat_id, username):
-
+    global data
     print("showitem")
     #query = uquery[username]['query']
     start = uquery[username]['start'] if 'start' in uquery[username] else 0
@@ -426,6 +427,7 @@ def help(bot, update):
 #             update.message.reply_text('Please rephrase your request')
 
 def classify(bot, update):
+    global data
     username = update._effective_user.username
     query = update.message.text
 
