@@ -68,7 +68,9 @@ class RankingEmbModel(Component):
         #doc_fil = [w for w in doc if w.tag_ in ['NNP', 'NN', 'JJ', 'PROPN']]
         print('doc before money:', doc)
         print(str([w.tag_  for w in doc]))
-        
+        for ent in doc.ents:
+            print(ent.text, ent.start_char, ent.end_char, ent.label_)
+
         doc, money_res = find_money(doc)
         
         print('doc after money:', doc)
@@ -94,7 +96,7 @@ class RankingEmbModel(Component):
                 print('Going to intent classification, filtered:', doc)
 
                 nns = [w for w in doc if w.tag_ in ['NNP', 'NN', 'JJ', 'PROPN']]
-                sal_phrase = [w for w in doc if w.tag_ not in ['NNP', 'NN', 'JJ', 'PROPN']]
+                sal_phrase = [w for w in doc if w.tag_ not in ['NNP', 'NN', 'JJ', 'PROPN', 'CD']]
 
                 print('salient phrase for intent', sal_phrase)
                 print('nns for catalogue', nns)
@@ -166,7 +168,11 @@ class RankingEmbModel(Component):
         print("blue calculated")
 
         scores = np.mean([results_blue_feat, results_blue_title], axis=0).tolist()
-        results_args = np.argsort(scores).tolist()
+        raw_scores = [(score, len(self.data[idx]['Title'])) for idx, score in enumerate(scores)]
+        raw_scores_ar = np.array(raw_scores, dtype=[('x', '<i4'), ('y', '<i4')])
+        results_args = np.argsort(raw_scores_ar, order=('x','y')).tolist()
+
+        # results_args = np.argsort(scores).tolist()
 
         print('minimal score:', np.min(scores))
         print('10th score:', scores[results_args[10]])
