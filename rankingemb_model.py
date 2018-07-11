@@ -95,7 +95,7 @@ class RankingEmbModel(Component):
                 # doc = filter_nlp(doc)
                 print('Going to intent classification, filtered:', doc)
 
-                nns = [w for w in doc if w.tag_ in ['NNP', 'NN', 'JJ', 'PROPN']]
+                nns = [w for w in doc if w.tag_ in ['NNP', 'NN', 'JJ', 'PROPN', 'CD']]
                 sal_phrase = [w for w in doc if w.tag_ not in ['NNP', 'NN', 'JJ', 'PROPN', 'CD']]
 
                 print('salient phrase for intent', sal_phrase)
@@ -161,11 +161,11 @@ class RankingEmbModel(Component):
     #     pass
 
     def rank_items(self, doc, money_res):
-        results_blue_feat = [bleu_string_distance(lemmas(feat), lemmas(filter_nlp(doc)), (0.3, 0.7)) for feat in self.feat_nlped]
-        print("features calculated")
-
         results_blue_title = [bleu_string_distance(lemmas(title), lemmas(filter_nlp_title(doc)), (1,)) for title in self.title_nlped]
         print("blue calculated")
+
+        results_blue_feat = [bleu_string_distance(lemmas(feat), lemmas(filter_nlp(doc)), (0.3, 0.7)) if results_blue_title[idx]<1 else 1 for idx, feat in enumerate(self.feat_nlped)]
+        print("features calculated")
 
         scores = np.mean([results_blue_feat, results_blue_title], axis=0).tolist()
         raw_scores = [(score, len(self.data[idx]['Title'])) for idx, score in enumerate(scores)]
