@@ -175,6 +175,7 @@ class RankingEmbModel(Component):
         # results_args = np.argsort(scores).tolist()
 
         print('minimal score:', np.min(scores))
+        print([scores(idx) for idx in results_args[0:10]])
         print('10th score:', scores[results_args[10]])
         print('20th score:', scores[results_args[20]])
         print('30th score:', scores[results_args[30]])
