@@ -169,13 +169,13 @@ class RankingEmbModel(Component):
 
         scores = np.mean([results_blue_feat, results_blue_title], axis=0).tolist()
         raw_scores = [(score, len(self.data[idx]['Title'])) for idx, score in enumerate(scores)]
-        raw_scores_ar = np.array(raw_scores, dtype=[('x', '<i4'), ('y', '<i4')])
+        raw_scores_ar = np.array(raw_scores, dtype=[('x', 'float_'), ('y', 'int_')])
         results_args = np.argsort(raw_scores_ar, order=('x','y')).tolist()
 
         # results_args = np.argsort(scores).tolist()
 
         print('minimal score:', np.min(scores))
-        print([scores(idx) for idx in results_args[0:10]])
+        print([raw_scores[idx] for idx in results_args[:10]])
         print('10th score:', scores[results_args[10]])
         print('20th score:', scores[results_args[20]])
         print('30th score:', scores[results_args[30]])
