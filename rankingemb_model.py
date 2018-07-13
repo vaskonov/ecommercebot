@@ -32,8 +32,6 @@ class RankingEmbModel(Component):
         self.glove_model = kwargs['embedder']
         self.dim = int(kwargs['dim'])
 
-        print(self.glove_model([['home']]))
-
         with open('/tmp/phones.pickle', 'rb') as handle:
             log.debug('Data set is loading')
             self.data = pickle.load(handle)
@@ -66,10 +64,10 @@ class RankingEmbModel(Component):
         doc = nlp(text)
         # doc_fil = doc
         #doc_fil = [w for w in doc if w.tag_ in ['NNP', 'NN', 'JJ', 'PROPN']]
-        print('doc before money:', doc)
-        print(str([w.tag_  for w in doc]))
+        log.debug('doc before money:' + str(doc))
+        log.debug(str([w.tag_  for w in doc]))
         for ent in doc.ents:
-            print(ent.text, ent.start_char, ent.end_char, ent.label_)
+            log.debug(ent.text, ent.start_char, ent.end_char, ent.label_)
 
         doc, money_res = find_money(doc)
         
@@ -120,45 +118,6 @@ class RankingEmbModel(Component):
         else:
             nns = [w for w in doc if w.tag_ in ['NNP', 'NN', 'JJ', 'PROPN']]
             return self.rank_items(nns, money_res)
-
-
-            
-                
-
-        
-        # text_mean_emb = self.mean_transform([doc_fil])[0]
-        # results_mean = [cosine(text_mean_emb, emb) if np.sum(emb)!=0 else math.inf for emb in self.title_mean]
-    #     results_blue_feat = [bleu_string_distance(lemmas(feat), lemmas(filter_nlp(doc)), (0.3, 0.7)) for feat in self.feat_nlped]
-    #     print("features calculated")
-
-    #     results_blue_title = [bleu_string_distance(lemmas(title), lemmas(filter_nlp_title(doc)), (1,)) for title in self.title_nlped]
-    #     print("blue calculated")
-
-    #     scores = np.mean([results_blue_feat, results_blue_title], axis=0).tolist()
-    #     results_args = np.argsort(scores).tolist()
-
-    #     if 'num1' in money_res:
-    #         log.debug('results before money '+str(len(results_args)))
-    #         results_args = [idx for idx in results_args if price(self.data[idx])>=money_res['num1'] and price(self.data[idx])<=money_res['num2']]
-    #         log.debug('results after money '+str(len(results_args)))
-            
-    #     # fetch_data = [self.data[idx] for idx in results_args[start:stop+1]]
-    #     ret = {
-    #         'results_args': results_args,
-    #         'scores': scores
-    #     }
-    #     return json.dumps(ret)
-        
-    # # def train(self, data):
-    #     print(str(data))
-    #     pass
-
-    # def fit(self, *args, **kwargs):
-    #     super().__init__(**kwargs)  # self.opt initialized in here
-
-    #     print(self.opt.pop('category'))
-    #     # self.tokenizer = self.opt.pop('tokenizer')
-    #     pass
 
     def rank_items(self, doc, money_res):
         results_blue_title = [bleu_string_distance(lemmas(title), lemmas(filter_nlp_title(doc)), (1,)) for title in self.title_nlped]
@@ -254,21 +213,6 @@ class RankingEmbModel(Component):
     def reset(self):
         pass  
 
-    # def fit(self, x, y, *args, **kwargs):
-    #     pass
-
-    # def load(self, *args, **kwargs):
-    #     pass
-    #     # logger.info('SquadVocabEmbedder: loading saved {}s vocab from {}'.format(self.level, self.load_path))
-    #     # self.emb_dim, self.emb_mat, self.token2idx_dict = pickle.load(self.load_path.open('rb'))
-    #     # self.loaded = True
-
-    # def save(self, *args, **kwargs):
-    #     pass
-    #     # logger.info('SquadVocabEmbedder: saving {}s vocab to {}'.format(self.level, self.save_path))
-    #     # self.save_path.parent.mkdir(parents=True, exist_ok=True)
-    #     # pickle.dump((self.emb_dim, self.emb_mat, self.token2idx_dict), self.save_path.open('wb'))
-    
 def price(item):
     if 'ListPrice' in item:
         return float(item['ListPrice'].split('$')[1].replace(",",""))
@@ -350,5 +294,3 @@ def bleu_string_distance(q_list,a_list,weights):
   # 1 - exact match (good)
     smooth = SmoothingFunction()
     return 1-sentence_bleu([q_list], a_list, weights, auto_reweigh=False, emulate_multibleu=False, smoothing_function=smooth.method1)
-
-# print(bleu_string_distance(['i', 'love','nature'], ['i','love'],))
