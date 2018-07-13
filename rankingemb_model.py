@@ -67,18 +67,18 @@ class RankingEmbModel(Component):
         log.debug('doc before money:' + str(doc))
         log.debug(str([w.tag_  for w in doc]))
         for ent in doc.ents:
-            log.debug(ent.text, ent.start_char, ent.end_char, ent.label_)
+            log.debug(str(ent.text)+" "+str(ent.start_char)+" "+str(ent.end_char)+" "+str(ent.label_))
 
         doc, money_res = find_money(doc)
         
-        print('doc after money:', doc)
+        log.debug('doc after money:' + str(doc))
         # print('filter_nlp:', filter_nlp(doc))
         
         if 'num1' not in money_res:
             results = self.classify_faq(doc)
 
             results_arg = np.argsort(results)
-            print('Results for faq: ', str(results_arg), str(results))
+            log.debug('Results for faq: '+ str(results_arg)+" "+str(results))
 
             if results[results_arg[0]] < 0.2:
 
@@ -91,24 +91,23 @@ class RankingEmbModel(Component):
             else:
 
                 # doc = filter_nlp(doc)
-                print('Going to intent classification, filtered:', doc)
+                log.debug('Going to intent classification, filtered:' +str(doc))
 
                 nns = [w for w in doc if w.tag_ in ['NNP', 'NN', 'JJ', 'PROPN', 'CD']]
                 sal_phrase = [w for w in doc if w.tag_ not in ['NNP', 'NN', 'JJ', 'PROPN', 'CD']]
 
-                print('salient phrase for intent', sal_phrase)
-                print('nns for catalogue', nns)
+                log.debug('salient phrase for intent' + str(sal_phrase))
+                log.debug('nns for catalogue' + str(nns))
 
                 if len(sal_phrase) == 0:
-                    print("salient is empty, go to rank")
+                    log.debug("salient is empty, go to rank")
                     return self.rank_items(nns, money_res)
 
                 scores = sorted(self.classify_intent(sal_phrase), key=lambda x: x[1])
-                print('intent classification:', str(scores))
+                log.debug('intent classification:'+str(scores))
 
                 if scores[0][1] < 0.2 and scores[0][0] == 'payment':
 
-                    print('payment detected')
                     return json.dumps({
                         'intent': 'payment'
                         })
@@ -121,10 +120,10 @@ class RankingEmbModel(Component):
 
     def rank_items(self, doc, money_res):
         results_blue_title = [bleu_string_distance(lemmas(title), lemmas(filter_nlp_title(doc)), (1,)) for title in self.title_nlped]
-        print("blue calculated")
+        log.debug("blue calculated")
 
         results_blue_feat = [bleu_string_distance(lemmas(feat), lemmas(filter_nlp(doc)), (0.3, 0.7)) if results_blue_title[idx]<1 else 1 for idx, feat in enumerate(self.feat_nlped)]
-        print("features calculated")
+        log.debug("features calculated")
 
         scores = np.mean([results_blue_feat, results_blue_title], axis=0).tolist()
         raw_scores = [(score, len(self.data[idx]['Title'])) for idx, score in enumerate(scores)]
@@ -133,11 +132,11 @@ class RankingEmbModel(Component):
 
         # results_args = np.argsort(scores).tolist()
 
-        print('minimal score:', np.min(scores))
-        print([raw_scores[idx] for idx in results_args[:10]])
-        print('10th score:', scores[results_args[10]])
-        print('20th score:', scores[results_args[20]])
-        print('30th score:', scores[results_args[30]])
+        log.debug('minimal score:'+str(np.min(scores)))
+        log.debug(str([raw_scores[idx] for idx in results_args[:10]]))
+        log.debug('10th score:'+str(scores[results_args[10]]))
+        log.debug('20th score:'+str(scores[results_args[20]]))
+        log.debug('30th score:'+str(scores[results_args[30]]))
 
         if 'num1' in money_res:
             log.debug('results before money '+str(len(results_args)))
@@ -151,10 +150,9 @@ class RankingEmbModel(Component):
             'scores': scores
         }
 
-        print(self.data[results_args[0]])
+        log.debug(str(self.data[results_args[0]]))
         return json.dumps(ret)
         
-
     def classify_faq(self, query_nlped):
         ques = list(self.faq_js.keys())
         ans = list(self.faq_js.values())
@@ -181,7 +179,6 @@ class RankingEmbModel(Component):
                 intents_scores.append((intent, score))
 
         return [score for score in intents_scores if score[1]>=0]
-
 
     def mean_transform(self, X, debug = False):
         out = []
