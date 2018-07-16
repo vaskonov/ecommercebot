@@ -31,6 +31,7 @@ CHOOSING, FAQ, ORDERS, CATALOG, MAIN = range(5)
 
 orders = {}
 uquery = {}
+field = ['Size', 'Brand', 'Author', 'Color', 'Genre']
 
 def card(bot, update, args):
     update.message.reply_text('card was pressed')
@@ -139,7 +140,9 @@ def button(bot, update):
 
     if 'details' in query.data:
         parts = query.data.split(":")
-        cats = ['Title', 'Manufacturer', 'Model', 'ListPrice', 'Binding', 'Feature']
+        
+        cats = ['Title', 'Manufacturer', 'Model', 'ListPrice', 'Binding', 'Color',
+             'Genre', 'Author', 'Brand', 'Size', 'Feature']
         txt = ""
         for cat in cats:
             if cat in data[int(parts[1])]:
@@ -186,6 +189,21 @@ def button(bot, update):
         bot.send_message(query.message.chat_id, 'Please type the product title')
         return CATALOG
 
+    if ":" in query.data:
+        uquery[username]['start'] = 0
+        uquery[username]['stop'] = 4
+        parts = query.data.split(":")
+        if parts[0] in field:
+            if parts[1] != 'undef':
+                args = []
+                for idx in uquery[username]['results_args']:
+                    if parts[0] in data[idx]:
+                        if data[idx][parts[0]].lower() == parts[1].lower():
+                            args.append(idx)
+                
+                uquery[username]['results_args'] = args
+            showitem(bot, query.message.chat_id, username)          
+
     if query.data == '1':
 #      update.message.reply_text('Please type the product query.')
       bot.edit_message_text(text="Please type the product query.", chat_id=query.message.chat_id, message_id=query.message.message_id)
@@ -202,6 +220,11 @@ def button(bot, update):
 
 def showitem(bot, chat_id, username):
 
+    from scipy.stats import entropy
+    from collections import Counter
+
+    fil = {'Size':[], 'Brand':[], 'Author':[], 'Color':[], 'Genre':[]}
+
     print("showitem")
     #query = uquery[username]['query']
     start = uquery[username]['start'] if 'start' in uquery[username] else 0
@@ -209,7 +232,9 @@ def showitem(bot, chat_id, username):
     results_args = uquery[username]['results_args']
     scores = uquery[username]['scores']
 
-    if len(scores) == 0:
+    print('showitem: start:', start, 'stop:', stop, 'results_args:', len(results_args))
+
+    if len(results_args) == 0:
         bot.send_message(chat_id, "The search is empty. Please change your query.")
         return
 
@@ -218,14 +243,44 @@ def showitem(bot, chat_id, username):
     # results_args, scores = search(query)
 
     step = 1
-    last_item_id = results_args[stop]
+    
+    if stop>=len(results_args):
+        print('REDEFINE STOP')
+        stop = len(results_args)-1
 
+    # last_item_id = results_args[min(stop, len(results_args)-1)]
+    last_item_id = results_args[stop]
+    
     if stop<start:
         step = -1
         last_item_id = results_args[start]
 
     keyboard = []
     keyboard.append([])
+
+    print('stop:', stop, 'last_item_id:', last_item_id, results_args[stop])
+
+    for idx in results_args[start:start+20:step]:
+        for key in field:
+            if key in data[idx]:
+                fil[key].append(data[idx][key].lower())
+            # else:
+                # fil[key].append('undef')
+    print(fil)
+
+    filcount = {}
+    entropy_list = []
+
+    for key, value in fil.items():
+        filcount[key] = list(Counter(list(value)).values())
+        print(key, filcount[key])
+        entropy_list.append((key, entropy(filcount[key], base=2)))
+    print(entropy_list)
+
+    max_entropy = sorted(entropy_list, key=lambda x: x[1], reverse=True)[0]
+
+    max_entropy_field = max_entropy[0]
+    print(max_entropy_field)
 
     for idx in results_args[start:stop:step]:
         logger.warning('Result "%s" with score "%s"', str(data[idx]['Title']), str(scores[idx]))
@@ -251,7 +306,8 @@ def showitem(bot, chat_id, username):
     if int(start) > 0:
         act[1].append(InlineKeyboardButton('Previous', callback_data='previous'))
 
-    act[1].append(InlineKeyboardButton('Next', callback_data='next'))
+    if len(results_args)-1>stop:
+        act[1].append(InlineKeyboardButton('Next', callback_data='next'))
 
     reply_markup = InlineKeyboardMarkup(act)
 
@@ -261,6 +317,19 @@ def showitem(bot, chat_id, username):
         titlel += " - <b>" + data[last_item_id]['ListPrice'].split('$')[1] + "$</b>"
 
     bot.send_message(chat_id, titlel, reply_markup=reply_markup, parse_mode=telegram.ParseMode.HTML)
+
+    # here goes the check
+    
+    if max_entropy[1]>0.5:
+        act = [[]]
+        
+        for val in Counter(fil[max_entropy_field]).most_common()[:4]:
+            if val[0] != 'undef':
+                act[0].append(InlineKeyboardButton(val[0], callback_data=max_entropy_field+':'+val[0]))
+
+        reply_markup = InlineKeyboardMarkup(act)
+        bot.send_message(chat_id, 'To specify the search, please choose a '+max_entropy_field.lower(), 
+            reply_markup=reply_markup, parse_mode=telegram.ParseMode.HTML)    
 
 def help(bot, update):
     update.message.reply_text('Please type your request in plain text')
@@ -287,12 +356,21 @@ def classify(bot, update):
         if username in uquery:
             del uquery[username]
 
+        args = json.loads(r.json())['results_args']
+        scores = json.loads(r.json())['scores']
+
+        args = [item for item in args if scores[item]<0.5]
+
         uquery[username] = {}
         #uquery[username]['query'] = text
         uquery[username]['start'] = 0
         uquery[username]['stop'] = 4
-        uquery[username]['scores'] = json.loads(r.json())['scores']
-        uquery[username]['results_args'] = json.loads(r.json())['results_args']
+        uquery[username]['scores'] = scores
+        uquery[username]['results_args'] = args
+
+        if len(args) == 0:
+            update.message.reply_text('Nothing was found. Please change the query')
+            return 
         
         showitem(bot, update.message.chat.id, username)
         return CATALOG
@@ -304,8 +382,9 @@ def done(bot, update, user_data):
     return ConversationHandler.END
 
 def main():
-    updater = Updater("619576158:AAG5mkS442XJ_RFhNEZhSC-m-AgovYUawhU")
 
+    updater = Updater("619576158:AAG5mkS442XJ_RFhNEZhSC-m-AgovYUawhU")
+    
     dp = updater.dispatcher
 
     conv_handler = ConversationHandler(
