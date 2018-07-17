@@ -31,6 +31,8 @@ CHOOSING, FAQ, ORDERS, CATALOG, MAIN = range(5)
 
 orders = {}
 uquery = {}
+context = ''
+
 field = ['Size', 'Brand', 'Author', 'Color', 'Genre']
 
 def card(bot, update, args):
@@ -196,7 +198,7 @@ def button(bot, update):
         if parts[0] in field:
             if parts[1] != 'undef':
                 args = []
-                for idx in uquery[username]['results_args']:
+                for idx in uquery[username]['filter'][parts[0]]:#uquery[username]['results_args']:
                     if parts[0] in data[idx]:
                         if data[idx][parts[0]].lower() == parts[1].lower():
                             args.append(idx)
@@ -216,10 +218,9 @@ def button(bot, update):
    #   update.message.reply_text('Please type your question.')
       bot.edit_message_text(text="Please type your question.", chat_id=query.message.chat_id, message_id=query.message.message_id)
 
-
-
 def showitem(bot, chat_id, username):
 
+    global context
     from scipy.stats import entropy
     from collections import Counter
 
@@ -322,13 +323,19 @@ def showitem(bot, chat_id, username):
     
     if max_entropy[1]>0.5:
         act = [[]]
-        
+
+        if 'filter' not in uquery[username]:
+            uquery[username]['filter'] = {}
+
+        uquery[username]['filter'][max_entropy_field] = results_args
+
+        context = max_entropy_field
         for val in Counter(fil[max_entropy_field]).most_common()[:4]:
             if val[0] != 'undef':
                 act[0].append(InlineKeyboardButton(val[0], callback_data=max_entropy_field+':'+val[0]))
 
         reply_markup = InlineKeyboardMarkup(act)
-        bot.send_message(chat_id, 'To specify the search, please choose a '+max_entropy_field.lower(), 
+        bot.send_message(chat_id, 'To specify the search, please choose a '+max_entropy_field.lower()+' or type it in plain text', 
             reply_markup=reply_markup, parse_mode=telegram.ParseMode.HTML)    
 
 def help(bot, update):
@@ -337,7 +344,22 @@ def help(bot, update):
 def classify(bot, update):
     username = update._effective_user.username
     query = update.message.text
-
+    global context
+    
+    if context != '':
+        print('classify: context:', context)
+        results_args = uquery[username]['results_args']
+        args = [idx for idx in results_args if query.lower() in data[idx][context].lower()]
+        print('classify: args:', len(args))
+        uquery[username]['start'] = 0
+        uquery[username]['stop'] = 4
+        
+        if len(args) != 0:
+            context = ''
+            uquery[username]['results_args'] = args
+            showitem(bot, update.message.chat.id, username)
+            return
+            
     r = requests.post("http://0.0.0.0:5000/rankingemb_model", json={'context':[[query]]})
     # r = requests.post("http://0.0.0.0:5000/rankingemb_model", json={'context':[query], 'start':start, 'stop':stop})
     intent = json.loads(r.json())['intent']
@@ -383,8 +405,18 @@ def done(bot, update, user_data):
 
 def main():
 
-    updater = Updater("619576158:AAG5mkS442XJ_RFhNEZhSC-m-AgovYUawhU")
-    
+    # updater = Updater("619576158:AAG5mkS442XJ_RFhNEZhSC-m-AgovYUawhU")
+
+    with open('./config.json', 'r') as f:
+        config = json.load(f)
+
+    if 'proxy' in config:
+        REQUEST_KWARGS={ 'proxy_url': config['proxy'] }
+        
+        updater = Updater(config['token'], request_kwargs=REQUEST_KWARGS)
+    else:
+        updater = Updater(config['token'])
+
     dp = updater.dispatcher
 
     conv_handler = ConversationHandler(
