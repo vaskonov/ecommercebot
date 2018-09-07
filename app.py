@@ -127,7 +127,7 @@ def button(bot, update):
             bot.send_message(query.message.chat_id, "The search is empty. Please change your query.", parse_mode=telegram.ParseMode.HTML)
             return
 
-        uquery[username]['scores'] = response[1][0]
+        uquery[username]['scores'] = response[1]
         uquery[username]['items'] = response[0]['items']
         uquery[username]['entropy'] = response[0]['entropy']
         uquery[username]['total'] = int(response[0]['total'])
@@ -147,7 +147,7 @@ def button(bot, update):
             bot.send_message(query.message.chat_id, "The search is empty. Please change your query.", parse_mode=telegram.ParseMode.HTML)
             return
 
-        uquery[username]['scores'] = response[1][0]
+        uquery[username]['scores'] = response[1]
         uquery[username]['items'] = response[0]['items']
         uquery[username]['entropy'] = response[0]['entropy']
         uquery[username]['total'] = int(response[0]['total'])
@@ -261,7 +261,7 @@ def button(bot, update):
         r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(uquery[username]['query'], uquery[username]['state'])]})
         response = json.loads(r.json())
 
-        uquery[username]['scores'] = response[1][0]
+        uquery[username]['scores'] = response[1]
         uquery[username]['items'] = response[0]['items']
         uquery[username]['entropy'] = response[0]['entropy']
         uquery[username]['total'] = int(response[0]['total'])
@@ -324,6 +324,7 @@ def showitem(bot, chat_id, username):#, items, entropy, state):
     print("total", total)
     print("items", items)
     print("entropy", entropy)
+    print("scores", scores)
     print("start", start, 'stop', stop)
     
     # print('showitem: start:', start, 'stop:', stop, 'results_args:', len(results_args))
@@ -503,7 +504,7 @@ def classify(bot, update):
 
     uquery[username] = {}
     uquery[username]['query'] = query
-    uquery[username]['scores'] = response[1][0]
+    uquery[username]['scores'] = response[1]
     uquery[username]['items'] = response[0]['items']
     uquery[username]['entropy'] = response[0]['entropy']
     uquery[username]['total'] = int(response[0]['total'])
