@@ -16,6 +16,7 @@ from spacy.tokens import Doc
 import math
 from decimal import Decimal
 import requests
+import copy
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -115,15 +116,43 @@ def button(bot, update):
         showitem(bot, query.message.chat_id, username)
 
     if 'previous' in query.data:
-        uquery[username]['stop'] = uquery[username]['start']-1
-        uquery[username]['start'] = uquery[username]['start']-5
-        showitem(bot, query.message.chat_id, username)
+        state_temp = copy.deepcopy(uquery[username]['state'])
+        state_temp['stop'] = state_temp['start']
+        state_temp['start'] = state_temp['start']-5
+        
+        r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(uquery[username]['query'], state_temp)]})
+        response = json.loads(r.json())
 
-    if 'next' in query.data:
-        uquery[username]['start'] = uquery[username]['stop']+1
-        uquery[username]['stop'] = uquery[username]['stop']+5
-        showitem(bot, query.message.chat_id, username)
+        if len(response[0]['items']) == 0:
+            bot.send_message(query.message.chat_id, "The search is empty. Please change your query.", parse_mode=telegram.ParseMode.HTML)
+            return
+
+        uquery[username]['scores'] = response[1][0]
+        uquery[username]['items'] = response[0]['items']
+        uquery[username]['entropy'] = response[0]['entropy']
+        uquery[username]['state'] = response[2]
+
+        showitem(bot, query.message.chat_id, username)    
     
+    if 'next' in query.data:
+        state_temp = copy.deepcopy(uquery[username]['state'])
+        state_temp['start'] = state_temp['stop']
+        state_temp['stop'] = state_temp['stop']+5
+        
+        r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(uquery[username]['query'], state_temp)]})
+        response = json.loads(r.json())
+
+        if len(response[0]['items']) == 0:
+            bot.send_message(query.message.chat_id, "The search is empty. Please change your query.", parse_mode=telegram.ParseMode.HTML)
+            return
+
+        uquery[username]['scores'] = response[1][0]
+        uquery[username]['items'] = response[0]['items']
+        uquery[username]['entropy'] = response[0]['entropy']
+        uquery[username]['state'] = response[2]
+
+        # showitem(bot, query.message.chat_id, username, response[0]['items'], response[0]['entropy'], response[2])
+        showitem(bot, query.message.chat_id, username)    
     # if 'payment' in query.data:
     #     # chat_id = update.message.chat_id
     #     make_payment(query.message.chat_id, username, bot)
@@ -200,19 +229,42 @@ def button(bot, update):
 
     # filter by entropy
     if ":" in query.data:
+    # if "query" in query.data:
+
+        # state = json.loads(query.data)
+        # print(state)
+
+        # if 'query' not in state:
+            # print('Search query is omitted')
+            # return
+
+
+        # state preredat'
         parts = query.data.split(":")
+
+        # in case when it's restart and the you proceed the query
+        if username not in uquery:
+            uquery[username] = {}
+            uquery[username]['state'] = {}
+
+        uquery[username]['state']['start'] = 0
+        uquery[username]['state']['stop'] = 5
+
         uquery[username]['state'][parts[0]] = parts[1]
+        print(query.data)
 
-        print('specify key:',parts[0], 'value:', parts[1], 'state:', uquery[username]['state'])
+        # print('specify key:',parts[0], 'value:', parts[1], 'state:', uquery[username]['state'])
 
-        r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(query.data.split(":")[1], uquery[username]['state'], uquery[username]['start'], uquery[username]['stop'])]})
+        # r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(state['query'], state)]})
+        r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(uquery[username]['query'], uquery[username]['state'])]})
         response = json.loads(r.json())
 
         uquery[username]['scores'] = response[1][0]
         uquery[username]['items'] = response[0]['items']
         uquery[username]['entropy'] = response[0]['entropy']
-        uquery[username]['state'] = response[0]['state']
+        uquery[username]['state'] = response[2]
 
+        # showitem(bot, query.message.chat_id, username, response[0]['items'], response[0]['entropy'], response[2])
         showitem(bot, query.message.chat_id, username)
 
         # return CATALOG
@@ -230,25 +282,49 @@ def button(bot, update):
         #         uquery[username]['results_args'] = args
         #     showitem(bot, query.message.chat_id, username)          
 
-def showitem(bot, chat_id, username):
+def showitem(bot, chat_id, username):#, items, entropy, state):
 
     global context
-    
-    
-    # fil = {'Size':[], 'Brand':[], 'Author':[], 'Color':[], 'Genre':[]}
+    print("SHOWITEM")
+    # print("items", items)
+    # print("entropy", entropy)
+    # print("state", state)
 
-    print("showitem")
-    #query = uquery[username]['query']
-    start = uquery[username]['start'] if 'start' in uquery[username] else 0
-    stop = uquery[username]['stop'] if 'stop' in uquery[username] else 4
+    query = uquery[username]['query']    
+    # start = uquery[username]['start'] if 'start' in uquery[username] else 0
+    # stop = uquery[username]['stop'] if 'stop' in uquery[username] else 4
+
+    if 'state' in uquery[username]:
+        print("state", uquery[username]['state'])
+
+        if 'stop' in uquery[username]['state']:
+            stop = uquery[username]['state']['stop']
+        else:
+            stop = 5
+
+        if 'start' in uquery[username]['state']:
+            start = uquery[username]['state']['start']
+        else:
+            start = 0
+    else:
+        start = 0
+        stop = 5
+    
+    # start = state['start'] if 'start' in state else 0
+    # stop = state['stop'] if 'stop' in state else 5
     
     items = uquery[username]['items']
     scores = uquery[username]['scores']
     entropy = uquery[username]['entropy']
 
+    print("items", items)
+    print("entropy", entropy)
+    print("start", start, 'stop', stop)
+    
     # print('showitem: start:', start, 'stop:', stop, 'results_args:', len(results_args))
 
-    if len(uquery[username]['items']) == 0:
+    # if len(uquery[username]['items']) == 0:
+    if len(items) == 0:
         bot.send_message(chat_id, "The search is empty. Please change your query.")
         return
 
@@ -269,9 +345,11 @@ def showitem(bot, chat_id, username):
 
     # print('stop:', stop, 'last_item_id:', last_item_id, results_args[stop])
 
-    for idx, item in enumerate(uquery[username]['items']):
+    # for idx, item in enumerate(uquery[username]['items']):
+    for idx, item in enumerate(items):
         act = [[]]
         act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(idx)))
+        # act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(idx)))
         # act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(idx)))
         reply_markup = InlineKeyboardMarkup(act)
 
@@ -288,6 +366,16 @@ def showitem(bot, chat_id, username):
     # act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(last_item_id)))
     # act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(last_item_id)))
 
+    act = [[]]
+    
+    if start!=0:
+        act[0].append(InlineKeyboardButton('Previous', callback_data='previous'))
+
+    act[0].append(InlineKeyboardButton('Next', callback_data='next'))
+    reply_markup = InlineKeyboardMarkup(act)
+    
+    bot.send_message(chat_id, 'Pagination', reply_markup=reply_markup, parse_mode=telegram.ParseMode.HTML)
+
     # if int(start) > 0:
     #     act[1].append(InlineKeyboardButton('Previous', callback_data='previous'))
 
@@ -303,15 +391,29 @@ def showitem(bot, chat_id, username):
 
     # bot.send_message(chat_id, titlel, reply_markup=reply_markup, parse_mode=telegram.ParseMode.HTML)
 
-    print(uquery[username]['entropy'])
-    if len(uquery[username]['entropy'])!=0:
+    # print(uquery[username]['entropy'])
+    # print('entropy comes', state)
+    # if len(uquery[username]['entropy'])!=0:
+    if len(entropy)!=0:
         act = [[]]
-        for entropy_value in uquery[username]['entropy'][0][2][:3]:
+        # for entropy_value in uquery[username]['entropy'][0][2][:3]:
+        for entropy_value in entropy[0][2][:3]:
             act[0].append(InlineKeyboardButton(entropy_value[0], callback_data=uquery[username]['entropy'][0][1]+':'+entropy_value[0]))
+            # state_temp = copy.deepcopy(state)
+            # state_temp[entropy[0][1]] = entropy_value[0]
+            
+            # if 'query' in state_temp:
+                # del state_temp['query']
+
+            # print('add', state_temp)
+            # act[0].append(InlineKeyboardButton(entropy_value[0], callback_data=json.dumps(state_temp)))
         
         reply_markup = InlineKeyboardMarkup(act)
-        bot.send_message(chat_id, 'To specify the search, please choose a '+uquery[username]['entropy'][0][1], 
+        # bot.send_message(chat_id, 'To specify the search, please choose a '+uquery[username]['entropy'][0][1], 
+        print('adding entropy buttons')
+        bot.send_message(chat_id, 'To specify the search, please choose a '+entropy[0][1], 
             reply_markup=reply_markup, parse_mode=telegram.ParseMode.HTML)
+        print('buttons were added')
 
 def help(bot, update):
     update.message.reply_text('Please type your request in plain text')
@@ -334,7 +436,8 @@ def classify(bot, update):
     username = update._effective_user.username
     query = update.message.text
     global context
-    
+
+
     # if context != '':
     #     print('classify: context:', context)
     #     results_args = uquery[username]['results_args']
@@ -350,7 +453,7 @@ def classify(bot, update):
     #         return
             
 #    r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(query, 0, 5)]})
-    r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(query, 0, 5, {})]})
+    r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(query, {})]})
 
     #r = requests.post("http://127.0.0.1:5000", json={'context':[(query, 0, 5)]})
     # r = requests.post("http://0.0.0.0:5000/rankingemb_model", json={'context':[query], 'start':start, 'stop':stop})
@@ -370,8 +473,8 @@ def classify(bot, update):
 
     response = json.loads(r.json())
 
-    # if username in uquery:
-    #     del uquery[username]
+    if username in uquery:
+        del uquery[username]
 
     # args = json.loads(r.json())['results_args']
     # scores = json.loads(r.json())['scores']
@@ -380,21 +483,18 @@ def classify(bot, update):
     # args = [item for item in args if scores[item]<0.5]
 
     uquery[username] = {}
-    #uquery[username]['query'] = text
-    uquery[username]['start'] = 0
-    uquery[username]['stop'] = 4
+    uquery[username]['query'] = query
     uquery[username]['scores'] = response[1][0]
     uquery[username]['items'] = response[0]['items']
     uquery[username]['entropy'] = response[0]['entropy']
+    uquery[username]['state'] = response[2]
 
-    # if 'state' not in uquery[username]:
-    uquery[username]['state'] = {}
-
-    # if len(args) == 0:
-    #     update.message.reply_text('Nothing was found. Please change the query')
-    #     return 
+    if len(response[0]['items']) == 0:
+    	update.message.reply_text('Nothing was found. Please change the query')
+    	return 
     
     showitem(bot, update.message.chat.id, username)
+    # showitem(bot, update.message.chat.id, username, response[0]['items'], response[0]['entropy'], {'query': query})
     return CATALOG
 
 def error(bot, update, error):
