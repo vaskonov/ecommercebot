@@ -130,6 +130,7 @@ def button(bot, update):
         uquery[username]['scores'] = response[1][0]
         uquery[username]['items'] = response[0]['items']
         uquery[username]['entropy'] = response[0]['entropy']
+        uquery[username]['total'] = int(response[0]['total'])
         uquery[username]['state'] = response[2]
 
         showitem(bot, query.message.chat_id, username)    
@@ -149,6 +150,7 @@ def button(bot, update):
         uquery[username]['scores'] = response[1][0]
         uquery[username]['items'] = response[0]['items']
         uquery[username]['entropy'] = response[0]['entropy']
+        uquery[username]['total'] = int(response[0]['total'])
         uquery[username]['state'] = response[2]
 
         # showitem(bot, query.message.chat_id, username, response[0]['items'], response[0]['entropy'], response[2])
@@ -262,6 +264,7 @@ def button(bot, update):
         uquery[username]['scores'] = response[1][0]
         uquery[username]['items'] = response[0]['items']
         uquery[username]['entropy'] = response[0]['entropy']
+        uquery[username]['total'] = int(response[0]['total'])
         uquery[username]['state'] = response[2]
 
         # showitem(bot, query.message.chat_id, username, response[0]['items'], response[0]['entropy'], response[2])
@@ -316,7 +319,9 @@ def showitem(bot, chat_id, username):#, items, entropy, state):
     items = uquery[username]['items']
     scores = uquery[username]['scores']
     entropy = uquery[username]['entropy']
+    total = uquery[username]['total']
 
+    print("total", total)
     print("items", items)
     print("entropy", entropy)
     print("start", start, 'stop', stop)
@@ -346,7 +351,7 @@ def showitem(bot, chat_id, username):#, items, entropy, state):
     # print('stop:', stop, 'last_item_id:', last_item_id, results_args[stop])
 
     # for idx, item in enumerate(uquery[username]['items']):
-    for idx, item in enumerate(items):
+    for idx, item in enumerate(items[:-1]):
         act = [[]]
         act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(idx)))
         # act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(idx)))
@@ -359,6 +364,26 @@ def showitem(bot, chat_id, username):#, items, entropy, state):
             title += " - <b>" + item['ListPrice'].split('$')[1] + "$</b>"
 
         bot.send_message(chat_id, title, reply_markup=reply_markup, parse_mode=telegram.ParseMode.HTML)
+
+
+    # add the last element
+
+    title = items[-1]['Title']
+    if 'ListPrice' in items[-1]:
+        title += " - <b>" + items[-1]['ListPrice'].split('$')[1] + "$</b>"
+
+    act = [[],[]]
+    act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(stop-1)))
+
+    if start!=0:
+        act[1].append(InlineKeyboardButton('Previous', callback_data='previous'))
+
+    if stop<=total:
+        act[1].append(InlineKeyboardButton('Next', callback_data='next'))
+    
+    reply_markup = InlineKeyboardMarkup(act)
+    bot.send_message(chat_id, title, reply_markup=reply_markup, parse_mode=telegram.ParseMode.HTML)
+
     
         # keyboard.append([InlineKeyboardButton(docs[idx].text, callback_data=idx)])
 
@@ -366,16 +391,10 @@ def showitem(bot, chat_id, username):#, items, entropy, state):
     # act[0].append(InlineKeyboardButton('Show details', callback_data='details:'+str(last_item_id)))
     # act[0].append(InlineKeyboardButton('Add to card', callback_data='tocard:'+str(last_item_id)))
 
-    act = [[]]
     
-    if start!=0:
-        act[0].append(InlineKeyboardButton('Previous', callback_data='previous'))
-
-    act[0].append(InlineKeyboardButton('Next', callback_data='next'))
-    reply_markup = InlineKeyboardMarkup(act)
     
-    bot.send_message(chat_id, 'Pagination', reply_markup=reply_markup, parse_mode=telegram.ParseMode.HTML)
-
+    
+    
     # if int(start) > 0:
     #     act[1].append(InlineKeyboardButton('Previous', callback_data='previous'))
 
@@ -487,6 +506,7 @@ def classify(bot, update):
     uquery[username]['scores'] = response[1][0]
     uquery[username]['items'] = response[0]['items']
     uquery[username]['entropy'] = response[0]['entropy']
+    uquery[username]['total'] = int(response[0]['total'])
     uquery[username]['state'] = response[2]
 
     if len(response[0]['items']) == 0:
