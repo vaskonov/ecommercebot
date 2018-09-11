@@ -120,7 +120,9 @@ def button(bot, update):
         state_temp['stop'] = state_temp['start']
         state_temp['start'] = state_temp['start']-5
         
-        r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(uquery[username]['query'], state_temp)]})
+        # r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(uquery[username]['query'], state_temp)]})
+        r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'query': [uquery[username]['query']], 'state': [state_temp]})
+
         response = json.loads(r.json())
 
         if len(response[0]['items']) == 0:
@@ -140,7 +142,8 @@ def button(bot, update):
         state_temp['start'] = state_temp['stop']
         state_temp['stop'] = state_temp['stop']+5
         
-        r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(uquery[username]['query'], state_temp)]})
+        # r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(uquery[username]['query'], state_temp)]})
+        r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'query': [uquery[username]['query']], 'state': [state_temp]})
         response = json.loads(r.json())
 
         if len(response[0]['items']) == 0:
@@ -258,7 +261,8 @@ def button(bot, update):
         # print('specify key:',parts[0], 'value:', parts[1], 'state:', uquery[username]['state'])
 
         # r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(state['query'], state)]})
-        r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(uquery[username]['query'], uquery[username]['state'])]})
+        # r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(uquery[username]['query'], uquery[username]['state'])]})
+        r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'query':[uquery[username]['query']], 'state':[uquery[username]['state']]})
         response = json.loads(r.json())
 
         uquery[username]['scores'] = response[1]
@@ -473,7 +477,10 @@ def classify(bot, update):
     #         return
             
 #    r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(query, 0, 5)]})
-    r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(query, {})]})
+    # r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(query, {})]})
+
+    r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'query': [query], 'state': ['{}']})
+
 
     #r = requests.post("http://127.0.0.1:5000", json={'context':[(query, 0, 5)]})
     # r = requests.post("http://0.0.0.0:5000/rankingemb_model", json={'context':[query], 'start':start, 'stop':stop})
@@ -491,6 +498,7 @@ def classify(bot, update):
 
     # if intent == 'catalog':
 
+    print(r.json())
     response = json.loads(r.json())
 
     if username in uquery:
