@@ -123,17 +123,18 @@ def button(bot, update):
         # r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(uquery[username]['query'], state_temp)]})
         r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'query': [uquery[username]['query']], 'state': [state_temp]})
 
-        response = json.loads(r.json())
+        response = json.loads(r.text)
 
-        if len(response[0]['items']) == 0:
+        if len(response[0][0]) == 0:
             bot.send_message(query.message.chat_id, "The search is empty. Please change your query.", parse_mode=telegram.ParseMode.HTML)
             return
 
         uquery[username]['scores'] = response[1]
-        uquery[username]['items'] = response[0]['items']
-        uquery[username]['entropy'] = response[0]['entropy']
-        uquery[username]['total'] = int(response[0]['total'])
+        uquery[username]['items'] = response[0][0]
+        uquery[username]['entropy'] = response[0][1]
+        uquery[username]['total'] = int(response[0][2])
         uquery[username]['state'] = response[2]
+
 
         showitem(bot, query.message.chat_id, username)    
     
@@ -144,16 +145,16 @@ def button(bot, update):
         
         # r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(uquery[username]['query'], state_temp)]})
         r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'query': [uquery[username]['query']], 'state': [state_temp]})
-        response = json.loads(r.json())
+        response = json.loads(r.text)
 
-        if len(response[0]['items']) == 0:
+        if len(response[0][0]) == 0:
             bot.send_message(query.message.chat_id, "The search is empty. Please change your query.", parse_mode=telegram.ParseMode.HTML)
             return
 
         uquery[username]['scores'] = response[1]
-        uquery[username]['items'] = response[0]['items']
-        uquery[username]['entropy'] = response[0]['entropy']
-        uquery[username]['total'] = int(response[0]['total'])
+        uquery[username]['items'] = response[0][0]
+        uquery[username]['entropy'] = response[0][1]
+        uquery[username]['total'] = int(response[0][2])
         uquery[username]['state'] = response[2]
 
         # showitem(bot, query.message.chat_id, username, response[0]['items'], response[0]['entropy'], response[2])
@@ -175,6 +176,7 @@ def button(bot, update):
 
     if 'details' in query.data:
         parts = query.data.split(":")
+        print(query.data)
         print('details parts:', parts, len(uquery[username]['items']))
         
         cats = ['Title', 'Manufacturer', 'Model', 'ListPrice', 'Binding', 'Color',
@@ -263,12 +265,12 @@ def button(bot, update):
         # r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(state['query'], state)]})
         # r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(uquery[username]['query'], uquery[username]['state'])]})
         r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'query':[uquery[username]['query']], 'state':[uquery[username]['state']]})
-        response = json.loads(r.json())
+        response = json.loads(r.text)
 
         uquery[username]['scores'] = response[1]
-        uquery[username]['items'] = response[0]['items']
-        uquery[username]['entropy'] = response[0]['entropy']
-        uquery[username]['total'] = int(response[0]['total'])
+        uquery[username]['items'] = response[0][0]
+        uquery[username]['entropy'] = response[0][1]
+        uquery[username]['total'] = int(response[0][2])
         uquery[username]['state'] = response[2]
 
         # showitem(bot, query.message.chat_id, username, response[0]['items'], response[0]['entropy'], response[2])
@@ -479,7 +481,13 @@ def classify(bot, update):
 #    r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(query, 0, 5)]})
     # r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'context':[(query, {})]})
 
-    r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'query': [query], 'state': ['{}']})
+    if username not in uquery:
+        uquery[username] = {}
+
+    if 'state' not in uquery[username]:
+        uquery[username]['state'] = {}
+
+    r = requests.post("http://0.0.0.0:5000/ecommerce_bot", json={'query': [query], 'state': [uquery[username]['state']]})
 
 
     #r = requests.post("http://127.0.0.1:5000", json={'context':[(query, 0, 5)]})
@@ -498,8 +506,8 @@ def classify(bot, update):
 
     # if intent == 'catalog':
 
-    print(r.json())
-    response = json.loads(r.json())
+
+    response = json.loads(r.text)
 
     if username in uquery:
         del uquery[username]
@@ -511,14 +519,14 @@ def classify(bot, update):
     # args = [item for item in args if scores[item]<0.5]
 
     uquery[username] = {}
-    uquery[username]['query'] = query
+    uquery[username]['query'] = response[2]['history'][-1]
     uquery[username]['scores'] = response[1]
-    uquery[username]['items'] = response[0]['items']
-    uquery[username]['entropy'] = response[0]['entropy']
-    uquery[username]['total'] = int(response[0]['total'])
+    uquery[username]['items'] = response[0][0]
+    uquery[username]['entropy'] = response[0][1]
+    uquery[username]['total'] = int(response[0][2])
     uquery[username]['state'] = response[2]
 
-    if len(response[0]['items']) == 0:
+    if len(response[0][0]) == 0:
     	update.message.reply_text('Nothing was found. Please change the query')
     	return 
     
